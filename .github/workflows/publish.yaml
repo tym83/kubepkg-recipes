@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  KUBEPKG_REF: fb684a1f262a080764a30bed63ac92175402baa3
+  KUBEPKG_REF: 0b15dcff479f5d808090587e7de78f79b94566ee
   REGISTRY: oci://ghcr.io/${{ github.repository_owner }}/kubepkg-packages
   BASE_INDEX: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.yaml
 
