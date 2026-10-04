@@ -1,0 +1,40 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: cert-manager
+  annotations:
+    kubepkg.dev/description: X.509 certificate management for Kubernetes
+    kubepkg.dev/home: https://cert-manager.io
+spec:
+  version: 1.21.2
+  build: 1
+  sources:
+    chart:
+      chart:
+        repository: https://charts.jetstack.io
+        name: cert-manager
+        version: v1.21.2
+        digest: sha256:73a56e1728edd6c99f1f31082618c3259d279a76b7ebd3d4bdc5475c2442d34a
+  charts:
+    cert-manager:
+      from: [chart]
+      values:
+        crds:
+          enabled: true   # CRDs are part of the package: upgraded and owned with it
+  package:
+    provides: [cert-manager, "api:cert-manager.io/v1", "api:acme.cert-manager.io/v1"]
+    crds:
+      - certificates.cert-manager.io
+      - certificaterequests.cert-manager.io
+      - issuers.cert-manager.io
+      - clusterissuers.cert-manager.io
+      - orders.acme.cert-manager.io
+      - challenges.acme.cert-manager.io
+    rollback:
+      safe: false   # CRD storage versions may move forward
+    variants:
+      - name: default
+        components:
+          - name: cert-manager
+            path: cert-manager
+            install: {namespace: cert-manager, releaseName: cert-manager}

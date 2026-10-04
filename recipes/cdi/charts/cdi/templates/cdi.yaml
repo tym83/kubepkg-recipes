@@ -1,0 +1,12 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: CDI
+metadata:
+  name: cdi
+spec:
+  config:
+    featureGates: {{ toJson .Values.featureGates }}
+  imagePullPolicy: {{ .Values.imagePullPolicy }}
+  infra:
+    nodeSelector: {{ toJson .Values.nodeSelector }}
+  workload:
+    nodeSelector: {{ toJson .Values.nodeSelector }}

@@ -1,0 +1,36 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: cdi
+  annotations:
+    kubepkg.dev/description: Containerized Data Importer, disk images for KubeVirt
+    kubepkg.dev/home: https://github.com/kubevirt/containerized-data-importer
+spec:
+  version: 1.66.1
+  build: 1
+  sources:
+    operator:
+      url: https://github.com/kubevirt/containerized-data-importer/releases/download/v1.66.1/cdi-operator.yaml
+      sha256: c7d92bd1b2ee1a3952a5990000437c08d58109f31c0bd48ab6188ec27a13e224
+    cdi:
+      dir: charts/cdi
+  charts:
+    cdi-operator:
+      from: [operator]
+      exclude: [{kind: Namespace}]
+    cdi:
+      from: [cdi]
+  package:
+    provides: [cdi, "api:cdi.kubevirt.io/v1beta1"]
+    crds: [cdis.cdi.kubevirt.io]
+    rollback:
+      safe: false   # CDI does not support downgrades
+    variants:
+      - name: default
+        components:
+          - name: operator
+            path: cdi-operator
+            install: {namespace: cdi}
+          - name: cdi
+            path: cdi
+            install: {namespace: cdi, dependsOn: [operator]}

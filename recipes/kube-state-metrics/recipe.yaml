@@ -1,0 +1,30 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: kube-state-metrics
+  annotations:
+    kubepkg.dev/description: Metrics about the state of Kubernetes objects
+    kubepkg.dev/home: https://github.com/kubernetes/kube-state-metrics
+spec:
+  version: 2.20.0
+  build: 1
+  sources:
+    chart:
+      chart:
+        repository: https://prometheus-community.github.io/helm-charts
+        name: kube-state-metrics
+        version: 8.6.0
+        digest: sha256:9bdf8485c0df29eb2070bacafbb8a4333a22663fb8049da32ff98ec521576388
+  charts:
+    kube-state-metrics:
+      from: [chart]
+  package:
+    provides: [kube-state-metrics]
+    rollback:
+      safe: true
+    variants:
+      - name: default
+        components:
+          - name: kube-state-metrics
+            path: kube-state-metrics
+            install: {namespace: kube-state-metrics, releaseName: kube-state-metrics}

@@ -1,0 +1,30 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: metrics-server
+  annotations:
+    kubepkg.dev/description: Resource metrics for autoscaling and kubectl top
+    kubepkg.dev/home: https://github.com/kubernetes-sigs/metrics-server
+spec:
+  version: 0.9.0
+  build: 1
+  sources:
+    chart:
+      chart:
+        repository: https://kubernetes-sigs.github.io/metrics-server
+        name: metrics-server
+        version: 3.14.0
+        digest: sha256:c2ca1185c01e6e7f53dd1b7d131f0c9b3fa50e003ed068b784563a1b5a3422a1
+  charts:
+    metrics-server:
+      from: [chart]
+  package:
+    provides: [metrics-server, "api:metrics.k8s.io/v1beta1"]
+    rollback:
+      safe: true
+    variants:
+      - name: default
+        components:
+          - name: metrics-server
+            path: metrics-server
+            install: {namespace: metrics-server, releaseName: metrics-server}
