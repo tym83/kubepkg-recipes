@@ -1,0 +1,44 @@
+name: publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+env:
+  KUBEPKG_REF: main
+  REGISTRY: oci://ghcr.io/${{ github.repository_owner }}/kubepkg-packages
+  BASE_INDEX: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.yaml
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Install kubepkg
+        run: go install "github.com/tym83/kubepkg/cmd/kubepkg@${KUBEPKG_REF}"
+      - name: Log in to the registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build, publish and index
+        run: scripts/build-all.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
