@@ -69,14 +69,15 @@ step "subscribe and look around"
 for ((i = 0; i < 20; i++)); do curl -sf "http://127.0.0.1:${WWW_PORT}/index.yaml" >/dev/null && break; sleep 0.5; done
 "${KP[@]}" repo add main "http://127.0.0.1:${WWW_PORT}/index.yaml"
 "${KP[@]}" search
-"${KP[@]}" plan kubevirt cdi
+"${KP[@]}" plan virtualization
 
 step "install everything"
-"${KP[@]}" install cert-manager metrics-server kube-state-metrics cdi kubevirt --yes
+"${KP[@]}" install cert-manager metrics-server kube-state-metrics virtualization --yes
 # kind has no /dev/kvm and its kubelets serve self-signed certificates.
 ${K} patch packages.kubepkg.dev kubevirt --type merge -p '{"spec":{"components":{"kubevirt":{"values":{"emulation":true}}}}}' >/dev/null
 ${K} patch packages.kubepkg.dev metrics-server --type merge -p '{"spec":{"components":{"metrics-server":{"values":{"args":["--kubelet-insecure-tls"]}}}}}' >/dev/null
-for p in cert-manager metrics-server kube-state-metrics cdi kubevirt; do ready "${p}"; done
+for p in cert-manager metrics-server kube-state-metrics cdi kubevirt virtualization; do ready "${p}"; done
+[[ "$(${K} get packages.kubepkg.dev kubevirt -o jsonpath='{.spec.version}')" == "~1.9" ]] || fail "kubevirt does not follow the constraint of the virtualization meta package"
 ${K} -n kubevirt wait kubevirt/kubevirt --for=condition=Available --timeout=15m >/dev/null || fail "KubeVirt not Available"
 ${K} wait cdi/cdi --for=condition=Available --timeout=15m >/dev/null || fail "CDI not Available"
 for ((i = 0; i < 60; i++)); do ${K} top nodes >/dev/null 2>&1 && break; sleep 5; done
@@ -84,7 +85,7 @@ ${K} top nodes >/dev/null 2>&1 || fail "metrics-server does not serve metrics"
 "${KP[@]}" list
 
 step "remove everything"
-${K} delete packages.kubepkg.dev kubevirt cdi kube-state-metrics metrics-server cert-manager --wait --timeout 900s >/dev/null || fail "packages not removed"
+${K} delete packages.kubepkg.dev virtualization kubevirt cdi kube-state-metrics metrics-server cert-manager --wait --timeout 900s >/dev/null || fail "packages not removed"
 
 echo
 echo "PASS"

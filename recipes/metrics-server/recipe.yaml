@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://github.com/kubernetes-sigs/metrics-server
 spec:
   version: 0.9.0
-  build: 1
+  build: 2
   sources:
     chart:
       chart:
