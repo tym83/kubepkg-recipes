@@ -1,0 +1,4 @@
+apiVersion: v2
+name: cdi
+description: The CDI resource that configures and deploys the Containerized Data Importer
+version: 1.66.1

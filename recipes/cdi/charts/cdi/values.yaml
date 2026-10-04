@@ -1,0 +1,5 @@
+featureGates:
+  - HonorWaitForFirstConsumer
+imagePullPolicy: IfNotPresent
+nodeSelector:
+  kubernetes.io/os: linux
