@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  KUBEPKG_REF: 7a9e5f98f9f30df3206b5e7e4fcac9f6abf26fd0
+  KUBEPKG_REF: e64dfcfe25f4e76e2affba060c081e5d7563671b
   REGISTRY: oci://ghcr.io/${{ github.repository_owner }}/kubepkg-packages
   BASE_INDEX: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.yaml
 
@@ -35,8 +35,10 @@ jobs:
         run: go install "github.com/tym83/kubepkg/cmd/kubepkg@${KUBEPKG_REF}"
       - name: Log in to the registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      - name: Build, publish and index
+      - name: Build, publish, index and sign
         run: scripts/build-all.sh
+        env:
+          KUBEPKG_SIGNING_KEY: ${{ secrets.KUBEPKG_SIGNING_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

@@ -9,6 +9,8 @@
 #   OUT          where index.yaml goes (default: _site)
 #   KUBEPKG      kubepkg binary (default: kubepkg on PATH)
 #   KUBEPKG_FLAGS  extra flags for build and index, e.g. --plain-http
+#   KUBEPKG_SIGNING_KEY  PEM ed25519 private key; when set, the index is
+#                        signed (index.yaml.sig)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -31,5 +33,6 @@ if [[ -n "${REGISTRY:-}" ]]; then
   mkdir -p "${OUT}"
   merge=()
   [[ -n "${BASE_INDEX:-}" ]] && merge=(--merge "${BASE_INDEX}")
+  [[ -n "${KUBEPKG_SIGNING_KEY:-}" ]] && merge+=(--sign-key-env KUBEPKG_SIGNING_KEY)
   "${KUBEPKG}" repo index "${DIST}" ${merge[@]+"${merge[@]}"} -o "${OUT}/index.yaml" ${FLAGS[@]+"${FLAGS[@]}"}
 fi
