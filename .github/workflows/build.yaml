@@ -8,7 +8,7 @@ permissions:
 
 env:
   # The kubepkg commit recipes are built with; move it forward deliberately.
-  KUBEPKG_REF: 7a9e5f98f9f30df3206b5e7e4fcac9f6abf26fd0
+  KUBEPKG_REF: e64dfcfe25f4e76e2affba060c081e5d7563671b
 
 jobs:
   build:
