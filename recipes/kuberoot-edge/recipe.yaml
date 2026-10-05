@@ -1,0 +1,16 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: kuberoot-edge
+  annotations:
+    kubepkg.dev/description: The cluster add-ons of the kuberoot edge distribution
+    kubepkg.dev/home: https://github.com/tym83/kuberoot
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    variants:
+      - name: default
+        requires:
+          - {package: coredns, version: "~1.14"}
+          - {package: metrics-server, version: "~0.9"}
