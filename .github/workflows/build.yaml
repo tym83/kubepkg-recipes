@@ -20,5 +20,7 @@ jobs:
           go-version: stable
       - name: Install kubepkg
         run: go install "github.com/tym83/kubepkg/cmd/kubepkg@${KUBEPKG_REF}"
+      - name: Validate every recipe
+        run: kubepkg validate recipes
       - name: Build every recipe
         run: scripts/build-all.sh
