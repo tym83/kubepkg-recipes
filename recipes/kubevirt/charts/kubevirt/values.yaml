@@ -3,3 +3,8 @@
 emulation: false
 featureGates: []
 imagePullPolicy: IfNotPresent
+# Where virt-api, virt-controller and virt-operator's install job run.
+# Unset, KubeVirt requires control-plane nodes, which clusters with a hosted
+# control plane (managed and tenant clusters) do not have. Empty places them
+# on any node; set a nodeSelector, affinity or tolerations to pin them.
+infraNodePlacement: {}
