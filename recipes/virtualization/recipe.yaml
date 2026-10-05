@@ -1,0 +1,16 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: virtualization
+  annotations:
+    kubepkg.dev/description: Virtual machines with disk image import (KubeVirt and CDI)
+    kubepkg.dev/home: https://kubevirt.io
+spec:
+  version: 1.0.0
+  build: 1
+  package:
+    variants:
+      - name: default
+        requires:
+          - {package: kubevirt, version: "~1.9"}
+          - {package: cdi, version: "~1.66"}

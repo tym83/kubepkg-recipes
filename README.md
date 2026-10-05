@@ -6,8 +6,10 @@ Every push to `main` builds the recipes, publishes the packages to `ghcr.io/tym8
 
 ```bash
 kubepkg repo add main https://tym83.github.io/kubepkg-recipes/index.yaml
-kubepkg install kubevirt
+kubepkg install virtualization
 ```
+
+Every package is a set of ordinary Helm charts in `ghcr.io/tym83/kubepkg-packages/<package>/<chart>`, versioned `<version>-<build>`, so Helm, Flux, Argo CD and werf install them without kubepkg; `kubepkg render` writes a resolved, ordered set for Flux, Argo CD or helmfile.
 
 | Package | Version | Built from |
 |---|---|---|
@@ -16,6 +18,7 @@ kubepkg install kubevirt
 | kube-state-metrics | 2.20.0 | upstream chart |
 | cdi | 1.66.1 | release manifests, plus a chart for the CDI resource |
 | kubevirt | 1.9.0 | release manifests, plus a chart for the KubeVirt resource |
+| virtualization | 1.0.0 | meta package: kubevirt ~1.9 and cdi ~1.66 |
 
 Build locally with `scripts/build-all.sh`; see the script for publishing.
 
