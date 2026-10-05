@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://kubevirt.io
 spec:
   version: 1.9.0
-  build: 2
+  build: 3
   sources:
     operator:
       url: https://github.com/kubevirt/kubevirt/releases/download/v1.9.0/kubevirt-operator.yaml
@@ -18,6 +18,20 @@ spec:
     kubevirt-operator:
       from: [operator]
       exclude: [{kind: Namespace}]
+      patches:
+        # Upstream requires control-plane nodes for virt-operator, which
+        # clusters with a hosted control plane (managed and tenant clusters)
+        # do not have: it would never schedule. Keep the preference and
+        # tolerations, drop the requirement.
+        - kind: Deployment
+          name: virt-operator
+          merge:
+            spec:
+              template:
+                spec:
+                  affinity:
+                    nodeAffinity:
+                      requiredDuringSchedulingIgnoredDuringExecution: null
     kubevirt:
       from: [kubevirt]
   package:
