@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://kubevirt.io
 spec:
   version: 1.9.0
-  build: 3
+  build: 4
   sources:
     operator:
       url: https://github.com/kubevirt/kubevirt/releases/download/v1.9.0/kubevirt-operator.yaml
