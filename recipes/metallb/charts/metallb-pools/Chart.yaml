@@ -1,0 +1,4 @@
+apiVersion: v2
+name: metallb-pools
+description: Address pools MetalLB hands out to LoadBalancer services
+version: 0.16.1

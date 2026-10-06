@@ -1,0 +1,6 @@
+# Address pools for LoadBalancer services, announced on the local network
+# (layer 2). Nothing is announced until a pool is given, e.g.:
+#   pools:
+#     - name: default
+#       addresses: [192.168.1.240-192.168.1.250]
+pools: []
