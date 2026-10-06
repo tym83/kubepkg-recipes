@@ -7,9 +7,11 @@ spec:
   jobLabel: jobLabel
   namespaceSelector:
     matchNames: [{{ .Values.nodeExporter.namespace }}]
+  # The label set in the component's values: the chart's own name labels
+  # follow the component name, which kubepkg gives the chart.
   selector:
     matchLabels:
-      app.kubernetes.io/name: prometheus-node-exporter
+      jobLabel: node-exporter
   endpoints:
     - port: metrics
       metricRelabelConfigs:
