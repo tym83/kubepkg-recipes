@@ -15,15 +15,28 @@ spec:
         name: gateway-helm
         version: "v1.9.2"
         digest: sha256:1079cad009e0885f6e10e5f712257d8e5fdaf911d2ceb3fa1b78632c8f29bbf9
+    crds:
+      chart:
+        repository: oci://docker.io/envoyproxy
+        name: gateway-crds-helm
+        version: "v1.9.2"
+        digest: sha256:8e22afc647f10b0c792ac2ee0180a66c65d9d11d3f2ac36eba8cb3c70197820f
   charts:
+    # Envoy Gateway's own CRDs, from upstream's CRD chart, which installs
+    # them as templates (so Helm upgrades them) and leaves out Gateway
+    # API's: those come from the gateway-api package.
+    envoy-gateway-crds:
+      from: [crds]
+      values:
+        crds:
+          gatewayAPI: {enabled: false}
+          envoyGateway: {enabled: true}
     envoy-gateway:
       from: [upstream]
-      # Gateway API's own CRDs and policy come from the gateway-api package;
-      # the chart keeps only Envoy Gateway's.
-      overlay: overlay
+      values:
+        crds: {enabled: false}
   package:
     provides: [envoy-gateway]
-    # The chart ships these from a subchart's crds/ directory.
     crds:
       - backends.gateway.envoyproxy.io
       - backendtrafficpolicies.gateway.envoyproxy.io
@@ -34,14 +47,15 @@ spec:
       - httproutefilters.gateway.envoyproxy.io
       - securitypolicies.gateway.envoyproxy.io
     rollback:
-      safe: false   # CRDs are upgraded in place
+      safe: false   # CRDs are upgraded in place and are not downgraded
     variants:
       - name: default
         requires:
           - {package: gateway-api, version: "~1.6"}
         components:
+          - name: crds
+            path: envoy-gateway-crds
+            install: {namespace: envoy-gateway-system, releaseName: envoy-gateway-crds}
           - name: envoy-gateway
             path: envoy-gateway
-            # The CRDs come from the chart's crds/ directory, which Helm
-            # alone never upgrades.
-            install: {namespace: envoy-gateway-system, upgradeCRDs: CreateReplace}
+            install: {namespace: envoy-gateway-system, dependsOn: [crds]}
