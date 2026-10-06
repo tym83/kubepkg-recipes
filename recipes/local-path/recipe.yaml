@@ -29,6 +29,16 @@ spec:
                     {"node": "DEFAULT_PATH_FOR_NON_LISTED_NODES", "paths": ["/var/local-path-provisioner"]}
                   ]
                 }
+        # Volumes of type local instead of hostPath: backup tools that copy
+        # volume contents (Velero's file-system backup) skip hostPath
+        # volumes. A kubelet that runs in a container (Talos) has to be
+        # given /var/local-path-provisioner as an extra mount.
+        - kind: StorageClass
+          name: local-path
+          merge:
+            metadata:
+              annotations:
+                defaultVolumeType: local
   package:
     provides: [local-path, "storageclass:local-path"]
     crds: []
