@@ -29,11 +29,26 @@ spec:
           # A stable Service name for the collector to send to.
           fullnameOverride: victoria-logs
           retentionPeriod: 7d
+          # Volumes without quotas (local-path) would otherwise grow until
+          # the node's disk is full: older logs go first at 8 GiB of the
+          # 10 GiB volume.
+          retentionDiskSpaceUsage: 8
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 1Gi}
     fluent-bit:
       from: [collector]
       values:
         # At info it logs every delivery, and collects those lines too.
         logLevel: warn
+        resources:
+          requests: {cpu: 20m, memory: 32Mi}
+          limits: {memory: 128Mi}
+        # Root is needed to read the node's log files; nothing else is.
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
         # Container logs only: nodes without journald have nothing more to
         # offer, and nothing else from the host is mounted.
         daemonSetVolumes:
@@ -72,9 +87,9 @@ spec:
             [OUTPUT]
                 Name http
                 Match kube.*
-                Host victoria-logs
+                Host victoria-logs.logging.svc
                 Port 9428
-                URI /insert/jsonline?_stream_fields=stream,kubernetes_namespace_name,kubernetes_pod_name,kubernetes_container_name&_msg_field=log&_time_field=date
+                URI /insert/jsonline?_stream_fields=stream,kubernetes_namespace_name,kubernetes_pod_name,kubernetes_container_name&_msg_field=log,msg,message&_time_field=date
                 Format json_lines
                 Json_Date_Key date
                 Json_Date_Format iso8601
@@ -93,4 +108,5 @@ spec:
           - name: fluent-bit
             path: fluent-bit
             # The collector reads node log files through a host path.
-            install: {namespace: logging, releaseName: fluent-bit, privileged: true, dependsOn: [victoria-logs]}
+            # Its own namespace: only the collector needs to be privileged.
+            install: {namespace: logging-agent, releaseName: fluent-bit, privileged: true, dependsOn: [victoria-logs]}
