@@ -1,0 +1,46 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: victoria-metrics
+  annotations:
+    kubepkg.dev/description: "Cluster monitoring: VictoriaMetrics, alerting rules, node metrics and Grafana with dashboards"
+    kubepkg.dev/home: https://github.com/VictoriaMetrics/helm-charts
+spec:
+  version: 1.153.0
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://victoriametrics.github.io/helm-charts
+        name: victoria-metrics-k8s-stack
+        version: "0.95.0"
+        digest: sha256:f7670802dbd92b0e0eb068eba0c9040461035b3170ba8a437f9a72613aafa3fa
+    scrapes:
+      dir: charts/scrapes
+  charts:
+    victoria-metrics:
+      from: [upstream]
+      values:
+        # Both come from their own packages.
+        victoria-metrics-operator: {enabled: false}
+        kube-state-metrics: {enabled: false}
+    scrapes:
+      from: [scrapes]
+  package:
+    provides: [victoria-metrics, monitoring]
+    crds: []
+    rollback:
+      safe: true   # the operator owns the stored state; the stack is its configuration
+    variants:
+      - name: default
+        requires:
+          - {package: victoria-metrics-operator, version: "~0.75"}
+          - {package: kube-state-metrics, version: ">=2.0"}
+        components:
+          - name: victoria-metrics
+            path: victoria-metrics
+            # node-exporter reads the host from the host network and PID space.
+            install: {namespace: monitoring, privileged: true}
+          - name: scrapes
+            path: scrapes
+            install: {namespace: monitoring, dependsOn: [victoria-metrics]}

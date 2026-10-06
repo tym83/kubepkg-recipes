@@ -1,0 +1,4 @@
+# kube-state-metrics comes from its own package, not from the stack.
+kubeStateMetrics:
+  enabled: true
+  namespace: kube-state-metrics

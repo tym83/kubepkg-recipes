@@ -1,0 +1,4 @@
+apiVersion: v2
+name: scrapes
+description: Scrape configuration for components installed as their own packages
+version: 1.153.0
