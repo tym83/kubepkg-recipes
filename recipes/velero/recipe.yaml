@@ -1,0 +1,68 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: velero
+  annotations:
+    kubepkg.dev/description: "Backup and restore of cluster resources and volumes to S3-compatible storage"
+    kubepkg.dev/home: https://github.com/vmware-tanzu/velero
+spec:
+  version: 1.18.2
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://vmware-tanzu.github.io/helm-charts
+        name: velero
+        version: "12.2.0"
+        digest: sha256:5e6b516dc6ce83f0b46ef0440c09a5f061e68861c5c8bfdc86484e886a1ba391
+  charts:
+    velero:
+      from: [upstream]
+      values:
+        # CRDs are upgraded by kubepkg, not by the chart's kubectl Job.
+        upgradeCRDs: false
+        # S3-compatible storage covers most object stores.
+        initContainers:
+          - name: velero-plugin-for-aws
+            image: velero/velero-plugin-for-aws:v1.14.4
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - {mountPath: /target, name: plugins}
+        # Nowhere to back up to until a location is given, e.g.:
+        #   backupStorageLocation:
+        #     - name: default
+        #       provider: aws
+        #       bucket: backups
+        #       config: {region: us-east-1, s3Url: https://s3.example.com, s3ForcePathStyle: "true"}
+        #       credential: {name: velero-s3, key: cloud}
+        configuration:
+          backupStorageLocation: []
+          volumeSnapshotLocation: []
+        snapshotsEnabled: false
+        # File-level volume backups, whatever the storage behind them.
+        deployNodeAgent: true
+  package:
+    provides: [velero, backup]
+    crds:
+      - backuprepositories.velero.io
+      - backups.velero.io
+      - backupstoragelocations.velero.io
+      - datadownloads.velero.io
+      - datauploads.velero.io
+      - deletebackuprequests.velero.io
+      - downloadrequests.velero.io
+      - podvolumebackups.velero.io
+      - podvolumerestores.velero.io
+      - restores.velero.io
+      - schedules.velero.io
+      - serverstatusrequests.velero.io
+      - volumesnapshotlocations.velero.io
+    rollback:
+      safe: false   # backup records live in its CRDs
+    variants:
+      - name: default
+        components:
+          - name: velero
+            path: velero
+            # The node agent reads volumes through the kubelet's host paths.
+            install: {namespace: velero, privileged: true, upgradeCRDs: CreateReplace}
