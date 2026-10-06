@@ -26,7 +26,6 @@ spec:
       - clusterephemeralreports.reports.kyverno.io
       - clusterpolicies.kyverno.io
       - clusterpolicyreports.wgpolicyk8s.io
-      - clusterreports.openreports.io
       - deletingpolicies.policies.kyverno.io
       - ephemeralreports.reports.kyverno.io
       - generatingpolicies.policies.kyverno.io
@@ -42,7 +41,6 @@ spec:
       - policyexceptions.kyverno.io
       - policyexceptions.policies.kyverno.io
       - policyreports.wgpolicyk8s.io
-      - reports.openreports.io
       - updaterequests.kyverno.io
       - validatingpolicies.policies.kyverno.io
     rollback:
