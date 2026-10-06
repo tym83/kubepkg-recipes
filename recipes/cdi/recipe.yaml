@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://github.com/kubevirt/containerized-data-importer
 spec:
   version: 1.66.1
-  build: 3
+  build: 4
   sources:
     operator:
       url: https://github.com/kubevirt/containerized-data-importer/releases/download/v1.66.1/cdi-operator.yaml
@@ -23,6 +23,14 @@ spec:
   package:
     provides: [cdi, "api:cdi.kubevirt.io/v1beta1"]
     crds: [cdis.cdi.kubevirt.io]
+    images:   # pinned with kubepkg images; operators deploy some of them on their own
+      - quay.io/kubevirt/cdi-apiserver:v1.66.1@sha256:98b71040e0e8de9397b57b4998641d4d3ea248fc300253b23085838990c4d241
+      - quay.io/kubevirt/cdi-cloner:v1.66.1@sha256:febbe8b265bb6fcf7ab743b780069fbae4a0531119933026de59545ad1bfc7a3
+      - quay.io/kubevirt/cdi-controller:v1.66.1@sha256:0cbf467d04febc5d63b7682524e87be7d775b488cb8b5963706d2ebc3465a72f
+      - quay.io/kubevirt/cdi-importer:v1.66.1@sha256:e22b63872cd04da43c62ad8ebb73cac46958b6e759fcc347752ec2ace1df75f4
+      - quay.io/kubevirt/cdi-operator:v1.66.1@sha256:470b2997b87c152b2573cdb4a3feb2a7925f60602e16c052de94e8d765b97357
+      - quay.io/kubevirt/cdi-uploadproxy:v1.66.1@sha256:f2493c0b33140167135110561ff415b8344f33dd53e20b9c8fbdb288e43326c9
+      - quay.io/kubevirt/cdi-uploadserver:v1.66.1@sha256:d3a6b735efcc914a0c9679fa8f64ab3dda764f7997d53bcafa6e2944f123420a
     rollback:
       safe: false   # CDI does not support downgrades
     variants:
