@@ -18,38 +18,30 @@ spec:
   charts:
     envoy-gateway:
       from: [upstream]
+      # Gateway API's own CRDs and policy come from the gateway-api package;
+      # the chart keeps only Envoy Gateway's.
+      overlay: overlay
   package:
-    provides: [envoy-gateway, gateway-api, "api:gateway.networking.k8s.io/v1"]
+    provides: [envoy-gateway]
     # The chart ships these from a subchart's crds/ directory.
     crds:
       - backends.gateway.envoyproxy.io
-      - backendtlspolicies.gateway.networking.k8s.io
       - backendtrafficpolicies.gateway.envoyproxy.io
       - clienttrafficpolicies.gateway.envoyproxy.io
       - envoyextensionpolicies.gateway.envoyproxy.io
       - envoypatchpolicies.gateway.envoyproxy.io
       - envoyproxies.gateway.envoyproxy.io
-      - gatewayclasses.gateway.networking.k8s.io
-      - gateways.gateway.networking.k8s.io
-      - grpcroutes.gateway.networking.k8s.io
       - httproutefilters.gateway.envoyproxy.io
-      - httproutes.gateway.networking.k8s.io
-      - listenersets.gateway.networking.k8s.io
-      - referencegrants.gateway.networking.k8s.io
       - securitypolicies.gateway.envoyproxy.io
-      - tcproutes.gateway.networking.k8s.io
-      - tlsroutes.gateway.networking.k8s.io
-      - udproutes.gateway.networking.k8s.io
-      - xbackends.gateway.networking.x-k8s.io
-      - xbackendtrafficpolicies.gateway.networking.x-k8s.io
-      - xmeshes.gateway.networking.x-k8s.io
     rollback:
       safe: false   # CRDs are upgraded in place
     variants:
       - name: default
+        requires:
+          - {package: gateway-api, version: "~1.6"}
         components:
           - name: envoy-gateway
             path: envoy-gateway
-            # Gateway API CRDs change between releases; Helm alone never
-            # upgrades them.
+            # The CRDs come from the chart's crds/ directory, which Helm
+            # alone never upgrades.
             install: {namespace: envoy-gateway-system, upgradeCRDs: CreateReplace}
