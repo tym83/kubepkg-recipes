@@ -20,6 +20,12 @@ spec:
   charts:
     metallb:
       from: [upstream]
+      values:
+        # The pools below are announced over layer 2, which the speaker does
+        # natively. frr-k8s, upstream's BGP backend, is a host-network
+        # DaemonSet with SYS_ADMIN; it is for BGP setups and stays off.
+        frrk8s:
+          enabled: false
     metallb-pools:
       from: [pools]
   package:
@@ -28,12 +34,8 @@ spec:
       - bfdprofiles.metallb.io
       - bgpadvertisements.metallb.io
       - bgppeers.metallb.io
-      - bgpsessionstates.frrk8s.metallb.io
       - communities.metallb.io
       - configurationstates.metallb.io
-      - frrconfigurations.frrk8s.metallb.io
-      - frrk8sconfigurations.frrk8s.metallb.io
-      - frrnodestates.frrk8s.metallb.io
       - ipaddresspools.metallb.io
       - l2advertisements.metallb.io
       - servicebgpstatuses.metallb.io
