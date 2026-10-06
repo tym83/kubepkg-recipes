@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://github.com/kubevirt/containerized-data-importer
 spec:
   version: 1.66.1
-  build: 2
+  build: 3
   sources:
     operator:
       url: https://github.com/kubevirt/containerized-data-importer/releases/download/v1.66.1/cdi-operator.yaml
@@ -33,4 +33,10 @@ spec:
             install: {namespace: cdi}
           - name: cdi
             path: cdi
-            install: {namespace: cdi, dependsOn: [operator]}
+            install:
+              namespace: cdi
+              dependsOn: [operator]
+              # The chart only creates the CDI resource; the operator then
+              # deploys CDI itself, which is ready when it reports Available.
+              readyWhen:
+                - {apiVersion: cdi.kubevirt.io/v1beta1, kind: CDI, name: cdi, condition: Available}
