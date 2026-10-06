@@ -29,6 +29,23 @@ spec:
                     {"node": "DEFAULT_PATH_FOR_NON_LISTED_NODES", "paths": ["/var/local-path-provisioner"]}
                   ]
                 }
+              # Upstream runs the volume helper from busybox without a tag,
+              # that is whatever latest is at the time; pinned instead.
+              helperPod.yaml: |-
+                apiVersion: v1
+                kind: Pod
+                metadata:
+                  name: helper-pod
+                spec:
+                  priorityClassName: system-node-critical
+                  tolerations:
+                    - key: node.kubernetes.io/disk-pressure
+                      operator: Exists
+                      effect: NoSchedule
+                  containers:
+                  - name: helper-pod
+                    image: docker.io/library/busybox:1.37.0@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+                    imagePullPolicy: IfNotPresent
         # Volumes of type local instead of hostPath: backup tools that copy
         # volume contents (Velero's file-system backup) skip hostPath
         # volumes. A kubelet that runs in a container (Talos) has to be
