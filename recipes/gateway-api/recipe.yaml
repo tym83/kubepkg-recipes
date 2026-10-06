@@ -1,0 +1,44 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: gateway-api
+  annotations:
+    kubepkg.dev/description: "Gateway API: the CRDs every Gateway API implementation uses (experimental channel)"
+    kubepkg.dev/home: https://gateway-api.sigs.k8s.io
+spec:
+  version: 1.6.1
+  build: 1
+  sources:
+    experimental-install:
+      url: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/experimental-install.yaml
+      sha256: d7fa77650e4ef28fca0411536fcb5e237deb4d50301cfded3be49d9a1b7bbd02
+  charts:
+    gateway-api:
+      from: [experimental-install]
+  package:
+    # Its own package, so implementations require it instead of each owning
+    # the shared CRDs: removing one implementation must not take every
+    # Gateway and HTTPRoute in the cluster with it.
+    provides: [gateway-api, "api:gateway.networking.k8s.io/v1"]
+    crds:
+      - backendtlspolicies.gateway.networking.k8s.io
+      - gatewayclasses.gateway.networking.k8s.io
+      - gateways.gateway.networking.k8s.io
+      - grpcroutes.gateway.networking.k8s.io
+      - httproutes.gateway.networking.k8s.io
+      - listenersets.gateway.networking.k8s.io
+      - referencegrants.gateway.networking.k8s.io
+      - tcproutes.gateway.networking.k8s.io
+      - tlsroutes.gateway.networking.k8s.io
+      - udproutes.gateway.networking.k8s.io
+      - xbackends.gateway.networking.x-k8s.io
+      - xbackendtrafficpolicies.gateway.networking.x-k8s.io
+      - xmeshes.gateway.networking.x-k8s.io
+    rollback:
+      safe: false   # CRDs only move forward; upstream's policy refuses downgrades
+    variants:
+      - name: default
+        components:
+          - name: gateway-api
+            path: gateway-api
+            install: {namespace: kube-system}
