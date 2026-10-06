@@ -2,3 +2,7 @@
 kubeStateMetrics:
   enabled: true
   namespace: kube-state-metrics
+# node-exporter is a component of this package in its own namespace.
+nodeExporter:
+  enabled: true
+  namespace: node-exporter

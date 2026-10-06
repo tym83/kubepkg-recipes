@@ -1,0 +1,19 @@
+{{- if .Values.nodeExporter.enabled }}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: node-exporter
+spec:
+  jobLabel: jobLabel
+  namespaceSelector:
+    matchNames: [{{ .Values.nodeExporter.namespace }}]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-node-exporter
+  endpoints:
+    - port: metrics
+      metricRelabelConfigs:
+        - action: drop
+          source_labels: [mountpoint]
+          regex: /var/lib/kubelet/pods.+
+{{- end }}

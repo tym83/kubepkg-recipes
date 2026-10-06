@@ -15,6 +15,12 @@ spec:
         name: victoria-metrics-k8s-stack
         version: "0.95.0"
         digest: sha256:f7670802dbd92b0e0eb068eba0c9040461035b3170ba8a437f9a72613aafa3fa
+    node-exporter:
+      chart:
+        repository: oci://ghcr.io/prometheus-community/charts
+        name: prometheus-node-exporter
+        version: "4.59.0"
+        digest: sha256:32b555a5f523215c120b283bdf20977a78934291d2c84b572325de21724a4a2c
     scrapes:
       dir: charts/scrapes
   charts:
@@ -24,23 +30,49 @@ spec:
         # Both come from their own packages.
         victoria-metrics-operator: {enabled: false}
         kube-state-metrics: {enabled: false}
+        # node-exporter needs the host's network and process namespaces; it
+        # runs as its own component in its own namespace, so the rest of the
+        # stack stays under the default pod security level.
+        prometheus-node-exporter: {enabled: false}
+        # Upstream fetches alerting rules and dashboards from GitHub branches
+        # in a post-install Job: an install that needs the internet and gets
+        # different content on different days. Off until they are pinned in
+        # the recipe.
+        syncJob: {enabled: false}
+        defaultRules: {enabled: false}
+        defaultDashboards: {enabled: false}
+        grafana:
+          # The dashboard and datasource sidecars read ConfigMaps and Secrets
+          # of their own namespace only; upstream grants it cluster-wide.
+          rbac: {namespaced: true}
+    node-exporter:
+      from: [node-exporter]
+      values:
+        service:
+          labels: {jobLabel: node-exporter}
+        extraArgs:
+          - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+          - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$
     scrapes:
       from: [scrapes]
   package:
     provides: [victoria-metrics, monitoring]
     crds: []
     rollback:
-      safe: true   # the operator owns the stored state; the stack is its configuration
+      safe: false   # VictoriaMetrics keeps its data across the version a rollback would return to
     variants:
       - name: default
         requires:
           - {package: victoria-metrics-operator, version: "~0.75"}
-          - {package: kube-state-metrics, version: ">=2.0"}
+          - {package: kube-state-metrics, version: "^2"}
         components:
           - name: victoria-metrics
             path: victoria-metrics
-            # node-exporter reads the host from the host network and PID space.
-            install: {namespace: monitoring, privileged: true}
+            install: {namespace: monitoring}
+          - name: node-exporter
+            path: node-exporter
+            # Reads the host through the host network and PID namespaces.
+            install: {namespace: node-exporter, releaseName: node-exporter, privileged: true}
           - name: scrapes
             path: scrapes
             install: {namespace: monitoring, dependsOn: [victoria-metrics]}
