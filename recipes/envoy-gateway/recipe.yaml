@@ -15,26 +15,13 @@ spec:
         name: gateway-helm
         version: "v1.9.2"
         digest: sha256:1079cad009e0885f6e10e5f712257d8e5fdaf911d2ceb3fa1b78632c8f29bbf9
-    crds:
-      chart:
-        repository: oci://docker.io/envoyproxy
-        name: gateway-crds-helm
-        version: "v1.9.2"
-        digest: sha256:8e22afc647f10b0c792ac2ee0180a66c65d9d11d3f2ac36eba8cb3c70197820f
   charts:
-    # Envoy Gateway's own CRDs, from upstream's CRD chart, which installs
-    # them as templates (so Helm upgrades them) and leaves out Gateway
-    # API's: those come from the gateway-api package.
-    envoy-gateway-crds:
-      from: [crds]
-      values:
-        crds:
-          gatewayAPI: {enabled: false}
-          envoyGateway: {enabled: true}
     envoy-gateway:
       from: [upstream]
-      values:
-        crds: {enabled: false}
+      # Gateway API's CRDs and safe-upgrade policy come from the gateway-api
+      # package; the overlay leaves only Envoy Gateway's own CRDs. They stay
+      # in crds/: as templates they would not fit in Helm's release record.
+      overlay: overlay
   package:
     provides: [envoy-gateway]
     crds:
@@ -53,9 +40,8 @@ spec:
         requires:
           - {package: gateway-api, version: "~1.6"}
         components:
-          - name: crds
-            path: envoy-gateway-crds
-            install: {namespace: envoy-gateway-system, releaseName: envoy-gateway-crds}
           - name: envoy-gateway
             path: envoy-gateway
-            install: {namespace: envoy-gateway-system, dependsOn: [crds]}
+            # The CRDs are in the chart's crds/ directory, which Helm alone
+            # never upgrades.
+            install: {namespace: envoy-gateway-system, upgradeCRDs: CreateReplace}
