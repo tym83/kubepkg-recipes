@@ -1,0 +1,55 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: envoy-gateway
+  annotations:
+    kubepkg.dev/description: Gateway API implementation on Envoy, for traffic into the cluster
+    kubepkg.dev/home: https://gateway.envoyproxy.io/
+spec:
+  version: 1.9.2
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: oci://docker.io/envoyproxy
+        name: gateway-helm
+        version: "v1.9.2"
+        digest: sha256:1079cad009e0885f6e10e5f712257d8e5fdaf911d2ceb3fa1b78632c8f29bbf9
+  charts:
+    envoy-gateway:
+      from: [upstream]
+  package:
+    provides: [envoy-gateway, gateway-api, "api:gateway.networking.k8s.io/v1"]
+    # The chart ships these from a subchart's crds/ directory.
+    crds:
+      - backends.gateway.envoyproxy.io
+      - backendtlspolicies.gateway.networking.k8s.io
+      - backendtrafficpolicies.gateway.envoyproxy.io
+      - clienttrafficpolicies.gateway.envoyproxy.io
+      - envoyextensionpolicies.gateway.envoyproxy.io
+      - envoypatchpolicies.gateway.envoyproxy.io
+      - envoyproxies.gateway.envoyproxy.io
+      - gatewayclasses.gateway.networking.k8s.io
+      - gateways.gateway.networking.k8s.io
+      - grpcroutes.gateway.networking.k8s.io
+      - httproutefilters.gateway.envoyproxy.io
+      - httproutes.gateway.networking.k8s.io
+      - listenersets.gateway.networking.k8s.io
+      - referencegrants.gateway.networking.k8s.io
+      - securitypolicies.gateway.envoyproxy.io
+      - tcproutes.gateway.networking.k8s.io
+      - tlsroutes.gateway.networking.k8s.io
+      - udproutes.gateway.networking.k8s.io
+      - xbackends.gateway.networking.x-k8s.io
+      - xbackendtrafficpolicies.gateway.networking.x-k8s.io
+      - xmeshes.gateway.networking.x-k8s.io
+    rollback:
+      safe: false   # CRDs are upgraded in place
+    variants:
+      - name: default
+        components:
+          - name: envoy-gateway
+            path: envoy-gateway
+            # Gateway API CRDs change between releases; Helm alone never
+            # upgrades them.
+            install: {namespace: envoy-gateway-system, upgradeCRDs: CreateReplace}
