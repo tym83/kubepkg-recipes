@@ -3,10 +3,10 @@ kind: Recipe
 metadata:
   name: kuberoot-edge
   annotations:
-    kubepkg.dev/description: The cluster add-ons of the kuberoot edge distribution
+    kubepkg.dev/description: "The cluster add-ons of the kuberoot edge distribution: DNS, resource metrics and default storage"
     kubepkg.dev/home: https://github.com/tym83/kuberoot
 spec:
-  version: 0.1.0
+  version: 0.2.0
   build: 1
   package:
     variants:
@@ -14,3 +14,6 @@ spec:
         requires:
           - {package: coredns, version: "~1.14"}
           - {package: metrics-server, version: "~0.9"}
+          # Edge nodes have no storage but their own disks: node-local
+          # volumes are the default, so volume claims without a class bind.
+          - {package: local-path-default, version: "~1.0"}
