@@ -1,0 +1,44 @@
+apiVersion: kubepkg.dev/v1beta1
+kind: Recipe
+metadata:
+  name: cilium
+  annotations:
+    kubepkg.dev/description: "Pod networking and network policies on eBPF"
+    kubepkg.dev/home: https://cilium.io/
+spec:
+  version: 1.20.2
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://helm.cilium.io
+        name: cilium
+        version: "1.20.2"
+        digest: sha256:b2afd87b7f75f875f92a14559f14f59b7babbb479d968e3fd625a20bf30ec20e
+  charts:
+    cilium:
+      from: [upstream]
+      values:
+        # Pod subnets come from the Node objects, as the cluster's
+        # controller manager assigns them, like most distributions do;
+        # upstream's default keeps a separate pool of its own.
+        ipam:
+          mode: kubernetes
+  package:
+    # The cluster's pod network: on kuberoot boot with
+    # kuberoot.pod-network=none, so the node leaves the network to Cilium.
+    provides: [cilium, cni, network-policy]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - quay.io/cilium/cilium-envoy:v1.37.6-1789133542-cbec91f666af0bf742da986d43832932dbb26b82@sha256:af7382699576b9e65e9184efa52eeca0b58aea70ad6e511bf260c91d9f740463
+      - quay.io/cilium/cilium:v1.20.2@sha256:2939231d0d3e3ebddcd80fffa168b7ddcc78fdf0dc864d1c8c126ff523c54f01
+      - quay.io/cilium/operator-generic:v1.20.2@sha256:64d8798350e8569b8e7622563fed6e44dce2625f311e4651b774816516c744fc
+    rollback:
+      safe: false   # the agent and its BPF state move forward only
+    variants:
+      - name: default
+        components:
+          - name: cilium
+            path: cilium
+            # The agent runs with the host's network, BPF and mounts.
+            install: {namespace: kube-system, privileged: true}
