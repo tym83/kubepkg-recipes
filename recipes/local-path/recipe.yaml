@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://github.com/rancher/local-path-provisioner
 spec:
   version: 0.0.37
-  build: 1
+  build: 2
   sources:
     local-path-storage:
       url: https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.37/deploy/local-path-storage.yaml
@@ -57,6 +57,10 @@ spec:
               annotations:
                 defaultVolumeType: local
   package:
+    images:   # pinned with kubepkg images
+      - docker.io/rancher/local-path-provisioner:v0.0.37@sha256:e757967a5ec338f6a9b371c5a9688bedaa8c3578ea3dd4db329ea0084be0a86f
+      # The volume helper, started by the provisioner from its ConfigMap.
+      - docker.io/library/busybox:1.37.0@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
     provides: [local-path, "storageclass:local-path"]
     crds: []
     rollback:

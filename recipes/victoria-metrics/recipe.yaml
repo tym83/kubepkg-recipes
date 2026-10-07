@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://github.com/VictoriaMetrics/helm-charts
 spec:
   version: 1.153.0
-  build: 2
+  build: 3
   sources:
     upstream:
       chart:
@@ -71,6 +71,15 @@ spec:
     scrapes:
       from: [scrapes]
   package:
+    images:   # pinned with kubepkg images
+      - docker.io/grafana/grafana:13.2.2-distroless@sha256:69a5d2d957ca0bba434c160dcd4f2d07de9d6c756a0ba10ae7f52b72ced1e4cc
+      - quay.io/kiwigrid/k8s-sidecar:2.11.2@sha256:2912be006f62f9ea080194cf6d3afcd90daead8d101d0ba686a137a849f6a4f6
+      - quay.io/prometheus/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
+      # Deployed by the operator for the stack.
+      - docker.io/prom/alertmanager:v0.34.0@sha256:690c7b525f4367aa91f73e2f91c632206d32e97c6384bdbf2fb7a861b420340d
+      - docker.io/victoriametrics/victoria-metrics:v1.153.0@sha256:5eff7af5341e401471002f58d106d399e614a62f3d240f2dbc21901e49eed5dd
+      - docker.io/victoriametrics/vmagent:v1.153.0@sha256:474135388ae700b842007d3e186a8ae60ccf7de3dfd776fb6ed27cf8522d8331
+      - docker.io/victoriametrics/vmalert:v1.153.0@sha256:0c1c7718b54b03e8559d0f257f31f1bd79ef7fa32ac6e9ed90d7b92a74a4fe76
     provides: [victoria-metrics, monitoring]
     crds: []
     rollback:

@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://metallb.universe.tf
 spec:
   version: 0.16.1
-  build: 1
+  build: 2
   sources:
     upstream:
       chart:
@@ -29,6 +29,9 @@ spec:
     metallb-pools:
       from: [pools]
   package:
+    images:   # pinned with kubepkg images
+      - quay.io/metallb/controller:v0.16.1@sha256:f51ab515de9ccd20dc3dccb093e48df8adddac019326c456f449e55ba91b6420
+      - quay.io/metallb/speaker:v0.16.1@sha256:16561e96531e1852d5c229ad7fae6e994dcfa983ff7f4de6b6208b34a4e2ddbc
     provides: [metallb, loadbalancer]
     crds:
       - bfdprofiles.metallb.io

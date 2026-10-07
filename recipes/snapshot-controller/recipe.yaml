@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://github.com/kubernetes-csi/external-snapshotter
 spec:
   version: 8.5.0
-  build: 1
+  build: 2
   sources:
     snapshot.storage.k8s.io_volumesnapshotclasses:
       url: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
@@ -43,6 +43,8 @@ spec:
                       args: ["--v=2", "--leader-election=true"]
                       imagePullPolicy: IfNotPresent
   package:
+    images:   # pinned with kubepkg images
+      - registry.k8s.io/sig-storage/snapshot-controller:v8.5.0@sha256:74ca61ab13e978f03cf0f336a607281d15f04cda0a38a881306365473b28a3d8
     provides: [snapshot-controller, "api:snapshot.storage.k8s.io/v1"]
     crds:
       - volumesnapshotclasses.snapshot.storage.k8s.io
