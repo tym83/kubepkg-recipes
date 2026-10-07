@@ -3,7 +3,7 @@ kind: Recipe
 metadata:
   name: piraeus
   annotations:
-    kubepkg.dev/description: "Replicated block storage on DRBD and LINSTOR"
+    kubepkg.dev/description: "Replicated block storage on DRBD 9 and LINSTOR; the operator loads DRBD unless the nodes do (linstorNode values)"
     kubepkg.dev/home: https://piraeus.io
 spec:
   version: 2.12.0
@@ -21,8 +21,8 @@ spec:
     piraeus-cluster:
       from: [cluster]
   package:
-    # Needs DRBD 9 loaded on every storage node: on kuberoot the edge
-    # profile loads it at boot.
+    # kuberoot nodes load DRBD at boot and pass their linstorNode values as
+    # platform values; elsewhere the operator builds and loads DRBD.
     provides: [piraeus, linstor, "storageclass:replicated"]
     crds:
       - linstorclusters.piraeus.io
@@ -58,4 +58,8 @@ spec:
             install: {namespace: piraeus-datastore, privileged: true}
           - name: cluster
             path: piraeus-cluster
-            install: {namespace: piraeus-datastore, dependsOn: [piraeus]}
+            install:
+              namespace: piraeus-datastore
+              dependsOn: [piraeus]
+              readyWhen:
+                - {apiVersion: piraeus.io/v1, kind: LinstorCluster, name: linstorcluster, condition: Available}

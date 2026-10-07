@@ -1,6 +1,6 @@
 # Where volumes live on each node: a thin-provisioned pool of files, which
-# needs nothing but a directory. Clusters with LVM can give an lvmThinPool
-# instead (see the LinstorSatelliteConfiguration reference).
+# needs nothing but a directory. For LVM, set fileThinPool: null and give
+# lvmThinPool: {volumeGroup: ..., thinPool: ...} (exactly one pool type).
 storagePool:
   name: pool1
   fileThinPool:
@@ -10,15 +10,19 @@ storageClass:
   name: replicated
   replicas: 2
   default: false
-# DRBD loaded by the node itself (kuberoot loads it at boot and then disables
-# module loading): the operator does not try to build and load it.
-drbdLoadedByTheNode: true
-# Nodes run systemd, udev and D-Bus. Without them (kuberoot), the satellite
-# drops the DRBD shutdown guard, a systemd unit, and the host's udev and
-# D-Bus mounts; the pool of files does not use udev. Set true on systemd
-# distributions to keep upstream's behaviour.
-nodeHasSystemd: false
-# Satellites on the node's network: DRBD's connections are made by the
-# kernel module with the node's addresses, so with satellites on the pod
-# network peers stay "Connecting" and volumes never get a second replica.
-hostNetwork: true
+# What the nodes are like. The defaults are upstream's: systemd hosts where
+# the operator builds and loads DRBD and satellites use the pod network. A
+# distribution whose nodes differ sets these in its platform values; the
+# block has a name of its own so that it is safe there.
+linstorNode:
+  # DRBD 9 (drbd and drbd_transport_tcp, usermode_helper=disabled) is loaded
+  # by the node itself, as kuberoot does at boot before it disables module
+  # loading: the operator's module loader is left out.
+  drbdLoaded: false
+  # The node runs systemd, udev and D-Bus; without them the DRBD shutdown
+  # guard (a systemd unit) and the host's udev and D-Bus mounts are left out.
+  systemd: true
+  # Satellites on the node's network. Needed where DRBD peers cannot reach
+  # each other over the pod network (they stay "Connecting"). Once volumes
+  # exist, switching back needs node reboots or drbdadm del-path.
+  hostNetwork: false

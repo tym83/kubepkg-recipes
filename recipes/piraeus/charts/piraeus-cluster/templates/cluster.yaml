@@ -17,7 +17,7 @@ spec:
       {{- with .Values.storagePool.lvmThinPool }}
       lvmThinPool: {{- toYaml . | nindent 8 }}
       {{- end }}
-{{- if .Values.drbdLoadedByTheNode }}
+{{- if .Values.linstorNode.drbdLoaded }}
 ---
 apiVersion: piraeus.io/v1
 kind: LinstorSatelliteConfiguration
@@ -28,6 +28,12 @@ spec:
     spec:
       initContainers:
         - name: drbd-module-loader
+          $patch: delete
+      # Host paths only the module loader uses.
+      volumes:
+        - name: lib-modules
+          $patch: delete
+        - name: usr-src
           $patch: delete
 {{- end }}
 {{- with .Values.storageClass.name }}
@@ -47,7 +53,7 @@ parameters:
   linstor.csi.linbit.com/storagePool: {{ $.Values.storagePool.name }}
   linstor.csi.linbit.com/placementCount: {{ $.Values.storageClass.replicas | quote }}
 {{- end }}
-{{- if not .Values.nodeHasSystemd }}
+{{- if not .Values.linstorNode.systemd }}
 ---
 apiVersion: piraeus.io/v1
 kind: LinstorSatelliteConfiguration
@@ -76,7 +82,7 @@ spec:
         - name: systemd-bus-socket
           $patch: delete
 {{- end }}
-{{- if .Values.hostNetwork }}
+{{- if .Values.linstorNode.hostNetwork }}
 ---
 apiVersion: piraeus.io/v1
 kind: LinstorSatelliteConfiguration
