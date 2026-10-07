@@ -1,0 +1,4 @@
+apiVersion: v2
+name: local-path-default
+description: The cluster's default StorageClass, on local-path volumes
+version: 1.0.0

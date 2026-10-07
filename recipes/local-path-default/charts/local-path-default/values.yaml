@@ -1,0 +1,3 @@
+# Volumes of type local, which file-level backups (Velero) can copy.
+volumeType: local
+reclaimPolicy: Delete
