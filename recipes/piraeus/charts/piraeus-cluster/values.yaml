@@ -13,3 +13,8 @@ storageClass:
 # DRBD loaded by the node itself (kuberoot loads it at boot and then disables
 # module loading): the operator does not try to build and load it.
 drbdLoadedByTheNode: true
+# Nodes run systemd, udev and D-Bus. Without them (kuberoot), the satellite
+# drops the DRBD shutdown guard, a systemd unit, and the host's udev and
+# D-Bus mounts; the pool of files does not use udev. Set true on systemd
+# distributions to keep upstream's behaviour.
+nodeHasSystemd: false

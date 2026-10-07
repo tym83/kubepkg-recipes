@@ -47,3 +47,32 @@ parameters:
   linstor.csi.linbit.com/storagePool: {{ $.Values.storagePool.name }}
   linstor.csi.linbit.com/placementCount: {{ $.Values.storageClass.replicas | quote }}
 {{- end }}
+{{- if not .Values.nodeHasSystemd }}
+---
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: node-without-systemd
+spec:
+  podTemplate:
+    spec:
+      initContainers:
+        - name: drbd-shutdown-guard
+          $patch: delete
+        - name: setup-lvm-configuration
+          volumeMounts:
+            - mountPath: /run/udev
+              $patch: delete
+      containers:
+        - name: linstor-satellite
+          volumeMounts:
+            - mountPath: /run/udev
+              $patch: delete
+      volumes:
+        - name: run-udev
+          $patch: delete
+        - name: run-systemd-system
+          $patch: delete
+        - name: systemd-bus-socket
+          $patch: delete
+{{- end }}
