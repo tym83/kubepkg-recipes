@@ -3,10 +3,10 @@ kind: Recipe
 metadata:
   name: kuberoot-platform-full
   annotations:
-    kubepkg.dev/description: "kuberoot-platform with policies (Kyverno) and backups (Velero)"
+    kubepkg.dev/description: "kuberoot-platform with policies (Kyverno), backups (Velero) and replicated storage (Piraeus)"
     kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
 spec:
-  version: 0.1.0
+  version: 0.2.0
   build: 1
   package:
     # A meta package of its own rather than a variant of kuberoot-platform:
@@ -18,3 +18,6 @@ spec:
           - {package: kuberoot-platform, version: "~0.1"}
           - {package: kyverno, version: "~1.19"}
           - {package: velero, version: "~1.18"}
+          # kuberoot nodes load DRBD at boot and describe themselves to it
+          # in their platform values.
+          - {package: piraeus, version: "~2.12"}
