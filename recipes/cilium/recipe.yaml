@@ -24,10 +24,18 @@ spec:
         # upstream's default keeps a separate pool of its own.
         ipam:
           mode: kubernetes
+        # Upstream runs two operators that may not share a node, and on a
+        # single node the second never starts and the install never
+        # completes. One operator restarts in seconds; the agents keep the
+        # network up meanwhile.
+        operator:
+          replicas: 1
   package:
     # The cluster's pod network: on kuberoot boot with
     # kuberoot.pod-network=none, so the node leaves the network to Cilium.
     provides: [cilium, cni, network-policy]
+    # One pod network per cluster.
+    conflicts: [cni]
     crds: []
     images:   # what the charts run, pinned; add images an operator deploys on its own
       - quay.io/cilium/cilium-envoy:v1.37.6-1789133542-cbec91f666af0bf742da986d43832932dbb26b82@sha256:af7382699576b9e65e9184efa52eeca0b58aea70ad6e511bf260c91d9f740463
