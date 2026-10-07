@@ -1,0 +1,47 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: envoy-gateway
+  annotations:
+    kubepkg.dev/description: Gateway API implementation on Envoy, for traffic into the cluster
+    kubepkg.dev/home: https://gateway.envoyproxy.io/
+spec:
+  version: 1.9.2
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: oci://docker.io/envoyproxy
+        name: gateway-helm
+        version: "v1.9.2"
+        digest: sha256:1079cad009e0885f6e10e5f712257d8e5fdaf911d2ceb3fa1b78632c8f29bbf9
+  charts:
+    envoy-gateway:
+      from: [upstream]
+      # Gateway API's CRDs and safe-upgrade policy come from the gateway-api
+      # package; the overlay leaves only Envoy Gateway's own CRDs. They stay
+      # in crds/: as templates they would not fit in Helm's release record.
+      overlay: overlay
+  package:
+    provides: [envoy-gateway]
+    crds:
+      - backends.gateway.envoyproxy.io
+      - backendtrafficpolicies.gateway.envoyproxy.io
+      - clienttrafficpolicies.gateway.envoyproxy.io
+      - envoyextensionpolicies.gateway.envoyproxy.io
+      - envoypatchpolicies.gateway.envoyproxy.io
+      - envoyproxies.gateway.envoyproxy.io
+      - httproutefilters.gateway.envoyproxy.io
+      - securitypolicies.gateway.envoyproxy.io
+    rollback:
+      safe: false   # CRDs are upgraded in place and are not downgraded
+    variants:
+      - name: default
+        requires:
+          - {package: gateway-api, version: "~1.6"}
+        components:
+          - name: envoy-gateway
+            path: envoy-gateway
+            # The CRDs are in the chart's crds/ directory, which Helm alone
+            # never upgrades.
+            install: {namespace: envoy-gateway-system, upgradeCRDs: CreateReplace}
