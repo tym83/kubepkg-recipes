@@ -11,7 +11,8 @@ spec:
   package:
     # Cluster DNS and the network are left to the cluster; everything else a
     # platform needs comes from here. Persistent volumes of monitoring and
-    # logs need a default StorageClass (local-path is not made one).
+    # logs need a default StorageClass: the cluster's own, or
+    # local-path-default on clusters with no other storage.
     variants:
       - name: default
         requires:
