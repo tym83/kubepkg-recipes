@@ -1,0 +1,54 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: metallb
+  annotations:
+    kubepkg.dev/description: LoadBalancer services on bare metal, announced over layer 2 or BGP
+    kubepkg.dev/home: https://metallb.universe.tf
+spec:
+  version: 0.16.1
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://metallb.github.io/metallb
+        name: metallb
+        version: "0.16.1"
+        digest: sha256:fb06bb584fcb7856f15733b2a6a2aff5b61b5c350687e341c163ae24a5938adc
+    pools:
+      dir: charts/metallb-pools
+  charts:
+    metallb:
+      from: [upstream]
+      values:
+        # The pools below are announced over layer 2, which the speaker does
+        # natively. frr-k8s, upstream's BGP backend, is a host-network
+        # DaemonSet with SYS_ADMIN; it is for BGP setups and stays off.
+        frrk8s:
+          enabled: false
+    metallb-pools:
+      from: [pools]
+  package:
+    provides: [metallb, loadbalancer]
+    crds:
+      - bfdprofiles.metallb.io
+      - bgpadvertisements.metallb.io
+      - bgppeers.metallb.io
+      - communities.metallb.io
+      - configurationstates.metallb.io
+      - ipaddresspools.metallb.io
+      - l2advertisements.metallb.io
+      - servicebgpstatuses.metallb.io
+      - servicel2statuses.metallb.io
+    rollback:
+      safe: false   # its CRDs have moved between stored versions before
+    variants:
+      - name: default
+        components:
+          - name: metallb
+            path: metallb
+            # The speaker runs on the host network with raw sockets.
+            install: {namespace: metallb-system, privileged: true}
+          - name: pools
+            path: metallb-pools
+            install: {namespace: metallb-system, dependsOn: [metallb]}

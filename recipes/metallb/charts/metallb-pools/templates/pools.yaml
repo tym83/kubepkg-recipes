@@ -1,0 +1,18 @@
+{{- range .Values.pools }}
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: {{ .name }}
+spec:
+  addresses:
+    {{- toYaml .addresses | nindent 4 }}
+  autoAssign: {{ if hasKey . "autoAssign" }}{{ .autoAssign }}{{ else }}true{{ end }}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: {{ .name }}
+spec:
+  ipAddressPools: [{{ .name }}]
+{{- end }}
