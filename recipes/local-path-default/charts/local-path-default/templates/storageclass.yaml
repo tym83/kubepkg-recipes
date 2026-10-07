@@ -7,4 +7,4 @@ metadata:
     defaultVolumeType: {{ .Values.volumeType | quote }}
 provisioner: rancher.io/local-path
 volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: {{ .Values.reclaimPolicy }}
+reclaimPolicy: Delete
