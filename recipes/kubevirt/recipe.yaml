@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://kubevirt.io
 spec:
   version: 1.9.0
-  build: 6
+  build: 7
   sources:
     operator:
       url: https://github.com/kubevirt/kubevirt/releases/download/v1.9.0/kubevirt-operator.yaml
@@ -56,7 +56,10 @@ spec:
         components:
           - name: operator
             path: kubevirt-operator
-            install: {namespace: kubevirt}
+            # The operator deploys virt-handler into this namespace: it runs
+            # with the host's PID namespace and host paths, which the
+            # baseline pod security level refuses.
+            install: {namespace: kubevirt, privileged: true}
           - name: kubevirt
             path: kubevirt
             install:
