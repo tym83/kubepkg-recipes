@@ -1,0 +1,65 @@
+apiVersion: kubepkg.dev/v1beta1
+kind: Recipe
+metadata:
+  name: piraeus
+  annotations:
+    kubepkg.dev/description: "Replicated block storage on DRBD 9 and LINSTOR; the operator loads DRBD unless the nodes do (linstorNode values)"
+    kubepkg.dev/home: https://piraeus.io
+spec:
+  version: 2.12.0
+  build: 1
+  sources:
+    manifest:
+      url: https://github.com/piraeusdatastore/piraeus-operator/releases/download/v2.12.0/manifest.yaml
+      sha256: 1d3b8f6cee38a369acda013e126f896f1e2b29c1f86c1539e66ccd475868a161
+    cluster:
+      dir: charts/piraeus-cluster
+  charts:
+    piraeus:
+      from: [manifest]
+      exclude: [{kind: Namespace}]   # kubepkg creates the install namespace
+    piraeus-cluster:
+      from: [cluster]
+  package:
+    # kuberoot nodes load DRBD at boot and pass their linstorNode values as
+    # platform values; elsewhere the operator builds and loads DRBD.
+    provides: [piraeus, linstor, "storageclass:replicated"]
+    crds:
+      - linstorclusters.piraeus.io
+      - linstornodeconnections.piraeus.io
+      - linstorsatelliteconfigurations.piraeus.io
+      - linstorsatellites.piraeus.io
+    # The operator, and what it deploys on its own (controller, satellites,
+    # CSI); its DRBD module loader is not used where the node loads DRBD.
+    images:
+      - quay.io/piraeusdatastore/piraeus-operator:v2.12.0@sha256:2fee47e187c1c0f53335d888ffb151fbf1d02868fe8b9fdc18d32629c48cdf49
+      - quay.io/piraeusdatastore/piraeus-server:v1.35.2@sha256:65b26f744dbfd6bd08554d079cb7b433748c7e6d43b2d1e20ce1f06c8ded6ace
+      - quay.io/piraeusdatastore/piraeus-csi:v1.13.1@sha256:900a9d34b8d2c4ed6479d1c0480b18aa5c003678532a12de71de54464b42d05e
+      - quay.io/piraeusdatastore/piraeus-csi-nfs-server:v1.13.1@sha256:b9d91188e435fc9b2ddd8f2b9fba3147102faa08bcafcaba2d14d6df56f8e153
+      - quay.io/piraeusdatastore/drbd-reactor:v1.12.0@sha256:6ca83674b3694fad3fca531bdeb1904bd1997e0306638e59cb547bccfec98bb5
+      - quay.io/piraeusdatastore/piraeus-ha-controller:v1.3.4@sha256:ac13aebcbc161792373e181234d9660bbb54ac5425024d5d871992a7eb448b65
+      - quay.io/piraeusdatastore/drbd-shutdown-guard:v1.1.2@sha256:a4adba73d07f6ba2605d0594676df47ab143e004991caadea3b7b556ead2db6e
+      - quay.io/piraeusdatastore/ktls-utils:v1.2.1@sha256:d9ce9e1b31c4a19986abc9d5ce375dc4e407a198b28dd05e48ce18d647d3f968
+      - quay.io/piraeusdatastore/linstor-affinity-controller:v1.5.0@sha256:27797e5c97d42d7b75af7a45877c6840cdc1be8c6e6d1624dc4a1a46aa79ecbf
+      - registry.k8s.io/sig-storage/csi-attacher:v4.13.0@sha256:d1a26170efed45491074ca4545c81844eee2b9043fb885ac01fb4aed6f8b72d2
+      - registry.k8s.io/sig-storage/livenessprobe:v2.20.0@sha256:19f2cf2f40e1987c7943945deca5f65cd4e4bf5cc0657fc78a5df131861578e8
+      - registry.k8s.io/sig-storage/csi-provisioner:v6.3.0@sha256:a4b0b1a37605b7b04a293e136edf7006ec1786a8eb3f4e5a945f81d667dcc371
+      - registry.k8s.io/sig-storage/csi-snapshotter:v8.6.0@sha256:42af0929bcd60a43499825c078a60ff0534e08af8fbeb283aa391be40feb9f3e
+      - registry.k8s.io/sig-storage/csi-resizer:v2.2.1@sha256:ea1d25e23479000c7e8eeb92d827df66258df4e482ca054c5e7ce3fc0f5c41a5
+      - registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.18.0@sha256:b7fefd08651f00ac4df1a196ed4c621c2451fbb899297fe9fad9e36c667af0c0
+    rollback:
+      safe: false   # LINSTOR keeps its database and volume metadata across versions
+    variants:
+      - name: default
+        components:
+          - name: piraeus
+            path: piraeus
+            # Satellites run privileged with host paths and the host network.
+            install: {namespace: piraeus-datastore, privileged: true}
+          - name: cluster
+            path: piraeus-cluster
+            install:
+              namespace: piraeus-datastore
+              dependsOn: [piraeus]
+              readyWhen:
+                - {apiVersion: piraeus.io/v1, kind: LinstorCluster, name: linstorcluster, condition: Available}

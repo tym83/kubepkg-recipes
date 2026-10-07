@@ -1,0 +1,4 @@
+apiVersion: v2
+name: piraeus-cluster
+description: The LINSTOR cluster the Piraeus operator runs, its storage pool and StorageClass
+version: 2.12.0
