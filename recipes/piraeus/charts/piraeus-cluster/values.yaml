@@ -18,3 +18,7 @@ drbdLoadedByTheNode: true
 # D-Bus mounts; the pool of files does not use udev. Set true on systemd
 # distributions to keep upstream's behaviour.
 nodeHasSystemd: false
+# Satellites on the node's network: DRBD's connections are made by the
+# kernel module with the node's addresses, so with satellites on the pod
+# network peers stay "Connecting" and volumes never get a second replica.
+hostNetwork: true
