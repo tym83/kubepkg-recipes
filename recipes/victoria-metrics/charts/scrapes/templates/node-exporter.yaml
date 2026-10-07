@@ -1,0 +1,21 @@
+{{- if .Values.nodeExporter.enabled }}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: node-exporter
+spec:
+  jobLabel: jobLabel
+  namespaceSelector:
+    matchNames: [{{ .Values.nodeExporter.namespace }}]
+  # The label set in the component's values: the chart's own name labels
+  # follow the component name, which kubepkg gives the chart.
+  selector:
+    matchLabels:
+      jobLabel: node-exporter
+  endpoints:
+    - port: metrics
+      metricRelabelConfigs:
+        - action: drop
+          source_labels: [mountpoint]
+          regex: /var/lib/kubelet/pods.+
+{{- end }}

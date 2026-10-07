@@ -1,0 +1,58 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: victoria-metrics-operator
+  annotations:
+    kubepkg.dev/description: Operator for VictoriaMetrics and VictoriaLogs (metrics, logs, alerting)
+    kubepkg.dev/home: https://github.com/VictoriaMetrics/operator
+spec:
+  version: 0.75.0
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://victoriametrics.github.io/helm-charts
+        name: victoria-metrics-operator
+        version: "0.68.1"
+        digest: sha256:cd6aff3b6f25013e182770d8470aeb324810a1516e642d0ee7d96d9d0f74375c
+  charts:
+    victoria-metrics-operator:
+      from: [upstream]
+  package:
+    provides: [victoria-metrics-operator, "api:operator.victoriametrics.com/v1beta1"]
+    # The chart renders these from a file; init lists only the first.
+    crds:
+      - vlagents.operator.victoriametrics.com
+      - vlclusters.operator.victoriametrics.com
+      - vldistributed.operator.victoriametrics.com
+      - vlogs.operator.victoriametrics.com
+      - vlsingles.operator.victoriametrics.com
+      - vmagents.operator.victoriametrics.com
+      - vmalertmanagerconfigs.operator.victoriametrics.com
+      - vmalertmanagers.operator.victoriametrics.com
+      - vmalerts.operator.victoriametrics.com
+      - vmanomalies.operator.victoriametrics.com
+      - vmanomalyconfigs.operator.victoriametrics.com
+      - vmauths.operator.victoriametrics.com
+      - vmclusters.operator.victoriametrics.com
+      - vmdistributed.operator.victoriametrics.com
+      - vmnodescrapes.operator.victoriametrics.com
+      - vmpodscrapes.operator.victoriametrics.com
+      - vmprobes.operator.victoriametrics.com
+      - vmrules.operator.victoriametrics.com
+      - vmscrapeconfigs.operator.victoriametrics.com
+      - vmservicescrapes.operator.victoriametrics.com
+      - vmsingles.operator.victoriametrics.com
+      - vmstaticscrapes.operator.victoriametrics.com
+      - vmusers.operator.victoriametrics.com
+      - vtagents.operator.victoriametrics.com
+      - vtclusters.operator.victoriametrics.com
+      - vtsingles.operator.victoriametrics.com
+    rollback:
+      safe: false   # the CRDs are upgraded with the chart
+    variants:
+      - name: default
+        components:
+          - name: victoria-metrics-operator
+            path: victoria-metrics-operator
+            install: {namespace: victoria-metrics}
