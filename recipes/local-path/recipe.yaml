@@ -1,0 +1,70 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: local-path
+  annotations:
+    kubepkg.dev/description: Node-local persistent volumes from a directory on each node
+    kubepkg.dev/home: https://github.com/rancher/local-path-provisioner
+spec:
+  version: 0.0.37
+  build: 1
+  sources:
+    local-path-storage:
+      url: https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.37/deploy/local-path-storage.yaml
+      sha256: 9781b39c24f3f651bd6d6e41b561e04e4904bbdb6d4f8c7a6009df3a702dcd65
+  charts:
+    local-path:
+      from: [local-path-storage]
+      exclude: [{kind: Namespace}]   # kubepkg creates the install namespace
+      patches:
+        # Upstream keeps volumes under /opt, which is read-only on immutable
+        # node systems; /var is writable everywhere.
+        - kind: ConfigMap
+          name: local-path-config
+          merge:
+            data:
+              config.json: |-
+                {
+                  "nodePathMap": [
+                    {"node": "DEFAULT_PATH_FOR_NON_LISTED_NODES", "paths": ["/var/local-path-provisioner"]}
+                  ]
+                }
+              # Upstream runs the volume helper from busybox without a tag,
+              # that is whatever latest is at the time; pinned instead.
+              helperPod.yaml: |-
+                apiVersion: v1
+                kind: Pod
+                metadata:
+                  name: helper-pod
+                spec:
+                  priorityClassName: system-node-critical
+                  tolerations:
+                    - key: node.kubernetes.io/disk-pressure
+                      operator: Exists
+                      effect: NoSchedule
+                  containers:
+                  - name: helper-pod
+                    image: docker.io/library/busybox:1.37.0@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+                    imagePullPolicy: IfNotPresent
+        # Volumes of type local instead of hostPath: backup tools that copy
+        # volume contents (Velero's file-system backup) skip hostPath
+        # volumes. A kubelet that runs in a container (Talos) has to be
+        # given /var/local-path-provisioner as an extra mount.
+        - kind: StorageClass
+          name: local-path
+          merge:
+            metadata:
+              annotations:
+                defaultVolumeType: local
+  package:
+    provides: [local-path, "storageclass:local-path"]
+    crds: []
+    rollback:
+      safe: true   # a stateless provisioner; the volumes stay on the nodes
+    variants:
+      - name: default
+        components:
+          - name: local-path
+            path: local-path
+            # Volume helper pods mount node directories.
+            install: {namespace: local-path-storage, privileged: true}
