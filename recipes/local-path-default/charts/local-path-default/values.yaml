@@ -1,0 +1,4 @@
+# Volumes of type local, which file-level backups (Velero) can copy.
+# Fields of a StorageClass cannot change once it exists: changing this
+# later needs the class removed and installed again.
+volumeType: local

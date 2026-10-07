@@ -1,0 +1,32 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: local-path-default
+  annotations:
+    kubepkg.dev/description: "Makes node-local volumes the cluster's default storage, for clusters with no other"
+    kubepkg.dev/home: https://github.com/rancher/local-path-provisioner
+spec:
+  version: 1.0.0
+  build: 1
+  sources:
+    chart:
+      dir: charts/local-path-default
+  charts:
+    local-path-default:
+      from: [chart]
+  package:
+    # A StorageClass of its own rather than a variant of local-path: a
+    # cluster with its own default storage installs local-path alone, and
+    # two default classes would make the default ambiguous.
+    provides: [local-path-default, "storageclass:default"]
+    crds: []
+    rollback:
+      safe: true   # one StorageClass; volumes stay where they are
+    variants:
+      - name: default
+        requires:
+          - {package: local-path, version: "~0.0.37"}
+        components:
+          - name: local-path-default
+            path: local-path-default
+            install: {namespace: local-path-storage}
