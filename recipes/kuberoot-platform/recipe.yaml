@@ -1,0 +1,31 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: kuberoot-platform
+  annotations:
+    kubepkg.dev/description: "A complete platform on a cluster: certificates, metrics, monitoring, logs, storage, ingress, load balancers and virtual machines"
+    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    # Cluster DNS and the network are left to the cluster; everything else a
+    # platform needs comes from here. Persistent volumes of monitoring and
+    # logs need a default StorageClass: the cluster's own, or
+    # local-path-default on clusters with no other storage.
+    variants:
+      - name: default
+        requires:
+          - {package: cert-manager, version: "~1.21"}
+          # Many clusters serve resource metrics already (managed
+          # Kubernetes, hosted control planes); metrics-server is installed
+          # only where nothing does.
+          - {capability: "api:metrics.k8s.io/v1beta1"}
+          - {package: kube-state-metrics, version: "~2.20"}
+          - {package: victoria-metrics, version: "~1.153"}
+          - {package: victoria-logs, version: "~1.53"}
+          - {package: local-path, version: "~0.0.37"}
+          - {package: snapshot-controller, version: "~8.5"}
+          - {package: envoy-gateway, version: "~1.9"}
+          - {package: metallb, version: "~0.16"}
+          - {package: virtualization, version: "~1.0"}

@@ -1,0 +1,20 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: kuberoot-platform-full
+  annotations:
+    kubepkg.dev/description: "kuberoot-platform with policies (Kyverno) and backups (Velero)"
+    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    # A meta package of its own rather than a variant of kuberoot-platform:
+    # a variant applies to every package an install resolves, and the
+    # members have only their default variants.
+    variants:
+      - name: default
+        requires:
+          - {package: kuberoot-platform, version: "~0.1"}
+          - {package: kyverno, version: "~1.19"}
+          - {package: velero, version: "~1.18"}
