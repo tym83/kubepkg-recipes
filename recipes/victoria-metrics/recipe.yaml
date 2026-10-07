@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://github.com/VictoriaMetrics/helm-charts
 spec:
   version: 1.153.0
-  build: 1
+  build: 2
   sources:
     upstream:
       chart:
@@ -45,6 +45,21 @@ spec:
           # The dashboard and datasource sidecars read ConfigMaps and Secrets
           # of their own namespace only; upstream grants it cluster-wide.
           rbac: {namespaced: true}
+        kubelet:
+          vmScrape:
+            spec:
+              # Upstream copies every label of the node onto every kubelet
+              # and cAdvisor series. KubeVirt labels nodes with hundreds of
+              # CPU features, and VictoriaMetrics then drops those series
+              # for having too many labels: no container CPU or memory at
+              # all. The node's name is what queries and dashboards use.
+              relabelConfigs:
+                - sourceLabels: [__meta_kubernetes_node_name]
+                  targetLabel: node
+                - sourceLabels: [__metrics_path__]
+                  targetLabel: metrics_path
+                - targetLabel: job
+                  replacement: kubelet
     node-exporter:
       from: [node-exporter]
       values:
