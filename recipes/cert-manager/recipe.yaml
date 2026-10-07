@@ -21,6 +21,12 @@ spec:
       values:
         crds:
           enabled: true   # CRDs are part of the package: upgraded and owned with it
+  verify:
+    images:   # signed by the cert-manager maintainers, https://cert-manager.io/docs/installation/code-signing/
+      - repositories: [quay.io/jetstack/*]
+        key: keys/cert-manager-pubkey-2021-09-20.pem
+        signatureDigest: sha512          # as cert-manager's code-signing docs say
+        ignoreTransparencyLog: true      # cert-manager signs with a KMS key, without Rekor
   package:
     provides: [cert-manager, "api:cert-manager.io/v1", "api:acme.cert-manager.io/v1"]
     crds:

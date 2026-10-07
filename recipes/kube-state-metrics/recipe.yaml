@@ -18,6 +18,11 @@ spec:
   charts:
     kube-state-metrics:
       from: [chart]
+  verify:
+    images:   # signed keyless by Kubernetes release engineering
+      - repositories: [registry.k8s.io/*/*]
+        identity: krel-trust@k8s-releng-prod.iam.gserviceaccount.com
+        issuer: https://accounts.google.com
   package:
     provides: [kube-state-metrics]
     images:   # pinned with kubepkg images

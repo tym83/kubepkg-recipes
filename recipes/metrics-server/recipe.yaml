@@ -18,6 +18,11 @@ spec:
   charts:
     metrics-server:
       from: [chart]
+  verify:
+    images:   # signed keyless by Kubernetes release engineering
+      - repositories: [registry.k8s.io/*/*]
+        identity: krel-trust@k8s-releng-prod.iam.gserviceaccount.com
+        issuer: https://accounts.google.com
   package:
     provides: [metrics-server, "api:metrics.k8s.io/v1beta1"]
     images:   # pinned with kubepkg images
