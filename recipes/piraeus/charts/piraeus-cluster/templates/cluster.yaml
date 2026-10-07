@@ -1,0 +1,49 @@
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec: {}
+---
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: storage-pool
+spec:
+  storagePools:
+    - name: {{ .Values.storagePool.name }}
+      {{- with .Values.storagePool.fileThinPool }}
+      fileThinPool: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.storagePool.lvmThinPool }}
+      lvmThinPool: {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if .Values.drbdLoadedByTheNode }}
+---
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: drbd-loaded-by-the-node
+spec:
+  podTemplate:
+    spec:
+      initContainers:
+        - name: drbd-module-loader
+          $patch: delete
+{{- end }}
+{{- with .Values.storageClass.name }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ . }}
+  {{- if $.Values.storageClass.default }}
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  {{- end }}
+provisioner: linstor.csi.linbit.com
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  linstor.csi.linbit.com/storagePool: {{ $.Values.storagePool.name }}
+  linstor.csi.linbit.com/placementCount: {{ $.Values.storageClass.replicas | quote }}
+{{- end }}

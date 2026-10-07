@@ -1,0 +1,15 @@
+# Where volumes live on each node: a thin-provisioned pool of files, which
+# needs nothing but a directory. Clusters with LVM can give an lvmThinPool
+# instead (see the LinstorSatelliteConfiguration reference).
+storagePool:
+  name: pool1
+  fileThinPool:
+    directory: /var/lib/piraeus-datastore/pool1
+# The StorageClass for replicated volumes; empty name: none.
+storageClass:
+  name: replicated
+  replicas: 2
+  default: false
+# DRBD loaded by the node itself (kuberoot loads it at boot and then disables
+# module loading): the operator does not try to build and load it.
+drbdLoadedByTheNode: true
