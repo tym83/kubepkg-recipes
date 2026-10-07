@@ -1,0 +1,58 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: snapshot-controller
+  annotations:
+    kubepkg.dev/description: "Volume snapshots for CSI drivers: the snapshot API and its controller"
+    kubepkg.dev/home: https://github.com/kubernetes-csi/external-snapshotter
+spec:
+  version: 8.5.0
+  build: 1
+  sources:
+    snapshot.storage.k8s.io_volumesnapshotclasses:
+      url: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+      sha256: 75e6565aac2c0f2949ed13ea884bbaa388cb7be576b558b709cf1168e011828d
+    snapshot.storage.k8s.io_volumesnapshotcontents:
+      url: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+      sha256: 895a3c1e73b60f06a0deb566dd123d01bdf1b2efc5d5ff5231ff8bbcf42dafc7
+    snapshot.storage.k8s.io_volumesnapshots:
+      url: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+      sha256: b032116e987fb1d7d93cec7d942833adeb9d95c9bdc7e00c10b280c2fe4a6c33
+    rbac-snapshot-controller:
+      url: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.5.0/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
+      sha256: 99c4ac480b6c9563be0d85599e29cc7b68b25a82d250b0e789726727551e8d38
+    setup-snapshot-controller:
+      url: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v8.5.0/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+      sha256: bab025e1fed9199c5d827f64febb572dd8b746928e48d656312a215bede74d92
+  charts:
+    snapshot-controller:
+      from: [snapshot.storage.k8s.io_volumesnapshotclasses, snapshot.storage.k8s.io_volumesnapshotcontents, snapshot.storage.k8s.io_volumesnapshots, rbac-snapshot-controller, setup-snapshot-controller]
+      patches:
+        # Upstream manifests of a release name the previous release's image.
+        # A merge patch replaces lists whole, so the container is given in
+        # full; --v=2 instead of upstream's debug-level --v=5.
+        - kind: Deployment
+          name: snapshot-controller
+          merge:
+            spec:
+              template:
+                spec:
+                  containers:
+                    - name: snapshot-controller
+                      image: registry.k8s.io/sig-storage/snapshot-controller:v8.5.0
+                      args: ["--v=2", "--leader-election=true"]
+                      imagePullPolicy: IfNotPresent
+  package:
+    provides: [snapshot-controller, "api:snapshot.storage.k8s.io/v1"]
+    crds:
+      - volumesnapshotclasses.snapshot.storage.k8s.io
+      - volumesnapshotcontents.snapshot.storage.k8s.io
+      - volumesnapshots.snapshot.storage.k8s.io
+    rollback:
+      safe: false   # snapshot CRDs carry stored versions
+    variants:
+      - name: default
+        components:
+          - name: snapshot-controller
+            path: snapshot-controller
+            install: {namespace: kube-system}
