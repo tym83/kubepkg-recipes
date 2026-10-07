@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://github.com/VictoriaMetrics/operator
 spec:
   version: 0.75.0
-  build: 1
+  build: 2
   sources:
     upstream:
       chart:
@@ -19,6 +19,10 @@ spec:
     victoria-metrics-operator:
       from: [upstream]
   package:
+    images:   # pinned with kubepkg images
+      - docker.io/victoriametrics/operator:v0.75.0@sha256:78da26b41a819093707be2ab6a65a5dc19f43d58ec52f30b49a545c2c6b7bd55
+      # Added by the operator to the pods it deploys.
+      - docker.io/victoriametrics/operator:config-reloader-v0.75.0@sha256:11c5d33b2112571e72cdc020b63c8045f2cd523fec4768b67a91f96e36b05c59
     provides: [victoria-metrics-operator, "api:operator.victoriametrics.com/v1beta1"]
     # The chart renders these from a file; init lists only the first.
     crds:
