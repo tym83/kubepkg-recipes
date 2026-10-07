@@ -1,0 +1,41 @@
+apiVersion: kubepkg.dev/v1alpha1
+kind: Recipe
+metadata:
+  name: coredns
+  annotations:
+    kubepkg.dev/description: "Cluster DNS: CoreDNS serving Kubernetes Services and forwarding the rest"
+    kubepkg.dev/home: https://coredns.io
+spec:
+  version: 1.14.7
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://coredns.github.io/helm
+        name: coredns
+        version: "1.48.2"
+        digest: sha256:7543caa3d30ef91660bf4373384ef657e09fdb42133d4163b0792613c808a464
+  charts:
+    coredns:
+      from: [upstream]
+      # As the cluster DNS. The Service address depends on the cluster's service
+      # range, so the cluster sets it: components.coredns.values.service.clusterIP.
+      values:
+        isClusterService: true
+        service:
+          name: kube-dns
+        serviceAccount:
+          create: true
+        k8sAppLabelOverride: kube-dns
+        priorityClassName: system-cluster-critical
+  package:
+    provides: [coredns, cluster-dns]
+    crds: []
+    rollback:
+      safe: true    # stateless: configuration lives in the values
+    variants:
+      - name: default
+        components:
+          - name: coredns
+            path: coredns
+            install: {namespace: kube-system, releaseName: coredns}
