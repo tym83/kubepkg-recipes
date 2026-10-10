@@ -4,7 +4,7 @@ metadata:
   name: ai-rag
   annotations:
     kubepkg.dev/description: "Retrieval-augmented generation: model serving and a chat interface with a vector database for documents"
-    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+    kubepkg.dev/home: https://github.com/kuberoot-dev/kubepkg-recipes
 spec:
   version: 0.1.0
   build: 1

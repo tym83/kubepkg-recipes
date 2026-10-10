@@ -11,6 +11,8 @@
 #   KUBEPKG_FLAGS  extra flags for build and index, e.g. --plain-http
 #   KUBEPKG_SIGNING_KEY  PEM ed25519 private key; when set, the index is
 #                        signed (index.yaml.sig)
+#   RELOCATE     space-separated oci://old=oci://new: published versions
+#                whose charts moved registries (see kubepkg repo index)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -34,5 +36,6 @@ if [[ -n "${REGISTRY:-}" ]]; then
   merge=()
   [[ -n "${BASE_INDEX:-}" ]] && merge=(--merge "${BASE_INDEX}")
   [[ -n "${KUBEPKG_SIGNING_KEY:-}" ]] && merge+=(--sign-key-env KUBEPKG_SIGNING_KEY)
+  for move in ${RELOCATE:-}; do merge+=(--relocate "${move}"); done
   "${KUBEPKG}" repo index "${DIST}" ${merge[@]+"${merge[@]}"} -o "${OUT}/index.yaml" ${FLAGS[@]+"${FLAGS[@]}"}
 fi
