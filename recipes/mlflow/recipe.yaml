@@ -1,0 +1,34 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: mlflow
+  annotations:
+    kubepkg.dev/description: "MLflow tracking server: experiments, runs, metrics and a model registry"
+    kubepkg.dev/home: https://mlflow.org
+spec:
+  version: 3.16.0
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://community-charts.github.io/helm-charts
+        name: mlflow
+        version: "1.11.7"
+        digest: sha256:8aecf5a11bee5b87ec8e76f524ce415e322eb19007acec2657f6b38260723d87
+  charts:
+    mlflow:
+      from: [upstream]
+      # values: {}                   # the package's defaults over the upstream ones
+  package:
+    provides: [mlflow, experiment-tracking]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - docker.io/burakince/mlflow:3.16.0@sha256:ab4b566644b90f00f7baf024ab4255e8219a6eeb530f34dd996fd0b0769c5fe1
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: mlflow
+            path: mlflow
+            install: {namespace: mlflow}
