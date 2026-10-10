@@ -20,7 +20,7 @@ spec:
       from: [upstream]
       # values: {}                   # the package's defaults over the upstream ones
   package:
-    provides: [kueue, job-queueing, "api:kueue.x-k8s.io/v1beta1"]
+    provides: [kueue, job-queueing, "api:kueue.x-k8s.io/v1beta2"]
     crds:
       - admissionchecks.kueue.x-k8s.io
       - clusterqueues.kueue.x-k8s.io
