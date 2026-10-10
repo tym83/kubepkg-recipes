@@ -7,7 +7,7 @@ metadata:
     kubepkg.dev/home: https://github.com/tym83/kuberoot
 spec:
   version: 0.1.0
-  build: 1
+  build: 2
   sources:
     observability:
       dir: charts/observability
