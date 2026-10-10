@@ -1,0 +1,49 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: perses-operator
+  annotations:
+    kubepkg.dev/description: "Perses, dashboards as Kubernetes resources: the operator that runs Perses instances and syncs PersesDashboard and PersesDatasource objects to them"
+    kubepkg.dev/home: https://perses.dev
+spec:
+  version: 0.5.0
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://perses.github.io/helm-charts
+        name: perses-operator
+        version: "0.5.0"
+        digest: sha256:61667b584fa8ac5db13ef8b60a7d125d127005fba1428ce801fbf47a243ccf49
+  charts:
+    perses-operator:
+      from: [upstream]
+      values:
+        # The webhook's certificate is the chart's own, self-signed: no
+        # dependency on cert-manager for one webhook.
+        certManager: {enable: false}
+        # No metrics endpoint; the chart runs its kube-rbac-proxy sidecar
+        # anyway, so that image is pinned below.
+        metrics: {enable: false}
+        # helm test pods: an image off a branch, not for clusters.
+        testFramework: {enabled: false}
+  package:
+    provides: [perses, dashboards]
+    crds:
+      - perses.perses.dev
+      - persesdashboards.perses.dev
+      - persesdatasources.perses.dev
+      - persesglobaldatasources.perses.dev
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - docker.io/persesdev/perses-operator:v0.5.0@sha256:8f8d7b09caefc35777dc88b9e8823efb7232b1ce2869648575176e760d7b55bf
+      - quay.io/brancz/kube-rbac-proxy:v0.22.1@sha256:e8cad21b2f9ad0302f1ec972c555a1d916f51aae6003da3cd2554d5f29bb9bc4
+      # Deployed by the operator for a Perses resource.
+      - docker.io/persesdev/perses:v0.54.0@sha256:a0e34ddaf9d7599d96036611af205b948c1179646844202d869f3bcf3d5d9e9c
+    rollback:
+      safe: true   # dashboards live in the cluster's resources, not in Perses' own storage
+    variants:
+      - name: default
+        components:
+          - name: perses-operator
+            path: perses-operator
+            install: {namespace: perses-operator}

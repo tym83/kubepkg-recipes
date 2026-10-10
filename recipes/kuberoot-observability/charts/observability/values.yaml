@@ -1,0 +1,13 @@
+perses:
+  # The image the package pins; the operator runs it for the instance.
+  image: docker.io/persesdev/perses:v0.54.0@sha256:a0e34ddaf9d7599d96036611af205b948c1179646844202d869f3bcf3d5d9e9c
+# Where the stores answer, as the victoria-metrics and victoria-logs
+# packages name them.
+metrics:
+  url: http://vmsingle-victoria-metrics.monitoring.svc:8428
+logs:
+  url: http://victoria-logs.logging.svc:9428
+# How long a device may be silent, or a heartbeat failing, before it alerts.
+alerts:
+  deviceDownFor: 5m
+  heartbeatFailingFor: 5m

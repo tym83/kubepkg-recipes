@@ -1,0 +1,56 @@
+{{- define "observability.series" -}}
+kind: TimeSeriesQuery
+spec:
+  plugin:
+    kind: PrometheusTimeSeriesQuery
+    spec:
+      query: {{ .query | quote }}
+      seriesNameFormat: {{ .legend | quote }}
+{{- end }}
+{{- define "observability.chart" -}}
+kind: Panel
+spec:
+  display: {name: {{ .name | quote }}}
+  plugin:
+    kind: TimeSeriesChart
+    spec:
+      legend: {position: bottom, mode: table}
+  queries:
+    - {{- include "observability.series" . | nindent 6 }}
+{{- end }}
+# What kuberoot-devices reads: whether each device answers, the servers'
+# temperatures, fans, power and health from their BMCs, what the SNMP agents
+# report, how the probed services answer, and the heartbeats.
+apiVersion: perses.dev/v1alpha2
+kind: PersesDashboard
+metadata:
+  name: kuberoot-devices
+spec:
+  instanceSelector:
+    matchLabels: {app.kubernetes.io/name: perses}
+  config:
+    display: {name: Devices}
+    duration: 6h
+    refreshInterval: 1m
+    panels:
+      up: {{- include "observability.chart" (dict "name" "Devices answering (1) or not (0)" "query" "kuberoot_device_up" "legend" "{{device}} ({{protocol}})") | nindent 8 }}
+      health: {{- include "observability.chart" (dict "name" "Health: 0 OK, 1 warning, 2 critical" "query" "kuberoot_device_value{point=~\".*_health\"}" "legend" "{{device}} {{point}}") | nindent 8 }}
+      temperature: {{- include "observability.chart" (dict "name" "Temperatures, °C" "query" "kuberoot_device_value{protocol=\"redfish\",point=~\"temperature_.*\"}" "legend" "{{device}} {{point}}") | nindent 8 }}
+      fans: {{- include "observability.chart" (dict "name" "Fans" "query" "kuberoot_device_value{protocol=\"redfish\",point=~\"fan_.*_(rpm|percent)\"}" "legend" "{{device}} {{point}}") | nindent 8 }}
+      power: {{- include "observability.chart" (dict "name" "Power drawn, W" "query" "kuberoot_device_value{protocol=\"redfish\",point=~\"power_.*_watts\"}" "legend" "{{device}} {{point}}") | nindent 8 }}
+      snmp: {{- include "observability.chart" (dict "name" "SNMP values" "query" "kuberoot_device_value{protocol=\"snmp\"}" "legend" "{{device}} {{point}} {{unit}}") | nindent 8 }}
+      latency: {{- include "observability.chart" (dict "name" "Probes: response time, s" "query" "kuberoot_device_value{protocol=~\"http|tcp|icmp\",point=\"latency_seconds\"}" "legend" "{{device}}") | nindent 8 }}
+      heartbeats: {{- include "observability.chart" (dict "name" "Heartbeats going out (1) or not (0)" "query" "kuberoot_heartbeat_healthy" "legend" "{{heartbeat}}") | nindent 8 }}
+    layouts:
+      - kind: Grid
+        spec:
+          display: {title: Devices}
+          items:
+            - {x: 0, y: 0, width: 12, height: 7, content: {$ref: "#/spec/panels/up"}}
+            - {x: 12, y: 0, width: 12, height: 7, content: {$ref: "#/spec/panels/health"}}
+            - {x: 0, y: 7, width: 8, height: 7, content: {$ref: "#/spec/panels/temperature"}}
+            - {x: 8, y: 7, width: 8, height: 7, content: {$ref: "#/spec/panels/fans"}}
+            - {x: 16, y: 7, width: 8, height: 7, content: {$ref: "#/spec/panels/power"}}
+            - {x: 0, y: 14, width: 8, height: 7, content: {$ref: "#/spec/panels/snmp"}}
+            - {x: 8, y: 14, width: 8, height: 7, content: {$ref: "#/spec/panels/latency"}}
+            - {x: 16, y: 14, width: 8, height: 7, content: {$ref: "#/spec/panels/heartbeats"}}

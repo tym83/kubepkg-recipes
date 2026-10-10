@@ -1,0 +1,18 @@
+# kuberoot-devices is a process of the control plane node; it keeps the
+# selector-less Service kube-system/kuberoot-devices on the node's address.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: kuberoot-devices
+spec:
+  namespaceSelector:
+    matchNames: [kube-system]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kuberoot-devices
+  endpoints:
+    - port: metrics
+      interval: 30s
+      relabelConfigs:
+        - targetLabel: job
+          replacement: kuberoot-devices
