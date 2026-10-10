@@ -1,0 +1,53 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: nvidia-device-plugin
+  annotations:
+    kubepkg.dev/description: "NVIDIA GPUs as a node resource (nvidia.com/gpu), for nodes whose operating system carries the driver"
+    kubepkg.dev/home: https://github.com/NVIDIA/k8s-device-plugin
+spec:
+  version: 0.20.1
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://nvidia.github.io/k8s-device-plugin
+        name: nvidia-device-plugin
+        version: "0.20.1"
+        digest: sha256:b705142f03ac17906bfcface9319e2f7b9a570d2af7f04f23252723ce2c0bb8e
+  charts:
+    nvidia-device-plugin:
+      from: [upstream]
+      values:
+        # The driver is part of the node's operating system, not a container:
+        # its libraries and nvidia-smi are under the host root.
+        nvidiaDriverRoot: /
+        # Devices reach containers through CDI, which containerd 2 reads,
+        # not through an NVIDIA container runtime the node does not have.
+        deviceListStrategy: cdi-cri
+        # GPU nodes are labelled nvidia.com/gpu.present=true; no node feature
+        # discovery is needed for that.
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - {key: nvidia.com/gpu.present, operator: In, values: ["true"]}
+        gfd:
+          enabled: false
+        nfd:
+          enabled: false
+  package:
+    provides: [nvidia-device-plugin, gpu-device-plugin]
+    conflicts: [hami]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - nvcr.io/nvidia/k8s-device-plugin:v0.20.1@sha256:27c1b2553a690ca3d29889dcd61df97525d46f58272c0be8dc63c2b18f120075
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: nvidia-device-plugin
+            path: nvidia-device-plugin
+            install: {namespace: nvidia-device-plugin, privileged: true}

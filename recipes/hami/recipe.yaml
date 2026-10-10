@@ -1,0 +1,52 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: hami
+  annotations:
+    kubepkg.dev/description: "GPU sharing: fractions of a GPU's memory and compute per container, with a scheduler that packs them"
+    kubepkg.dev/home: https://project-hami.io
+spec:
+  version: 2.10.0
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://project-hami.github.io/HAMi
+        name: hami
+        version: "2.10.0"
+        digest: sha256:e1d8429b2270da1a5c26343d6d6fd2a0099ba7b944cf0f52eb20d6b9f14e5099
+  charts:
+    hami:
+      from: [upstream]
+      values:
+        scheduler:
+          kubeScheduler:
+            # The scheduler HAMi extends, at the cluster's release, from the
+            # Kubernetes registry rather than a mirror.
+            image:
+              registry: registry.k8s.io
+              repository: kube-scheduler
+              tag: v1.37.1
+        devicePlugin:
+          # The driver is the node's, as for nvidia-device-plugin.
+          nvidiaDriverRoot: /
+          nvidiaNodeSelector:
+            nvidia.com/gpu.present: "true"
+          service:
+            type: ClusterIP
+  package:
+    provides: [hami, gpu-device-plugin, gpu-sharing]
+    conflicts: [nvidia-device-plugin]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - docker.io/liangjw/kube-webhook-certgen:v1.1.1@sha256:64d8c73dca984af206adf9d6d7e46aa550362b1d7a01f3a0a91b20cc67868660
+      - docker.io/projecthami/hami:v2.10.0@sha256:8c45cd84d8df3e6a8fe8c95e0141684973b5015692a0ef87588da05284f34447
+      - registry.k8s.io/kube-scheduler:v1.37.1@sha256:b6e2474a6c20309f0df1e7337364281fda95c6a0722259ba7f032a1e177d3f29
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: hami
+            path: hami
+            install: {namespace: hami-system, privileged: true}
