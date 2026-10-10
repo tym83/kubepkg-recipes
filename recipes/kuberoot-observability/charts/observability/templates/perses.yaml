@@ -1,0 +1,54 @@
+# The Perses instance; its dashboards and datasources are the resources
+# below, so it keeps nothing of its own worth a volume.
+apiVersion: perses.dev/v1alpha2
+kind: Perses
+metadata:
+  name: perses
+  labels:
+    app.kubernetes.io/name: perses
+spec:
+  image: {{ .Values.perses.image | quote }}
+  containerPort: 8080
+  config:
+    database:
+      file:
+        folder: /perses
+        extension: yaml
+  storage:
+    emptyDir: {}
+---
+apiVersion: perses.dev/v1alpha2
+kind: PersesGlobalDatasource
+metadata:
+  name: victoria-metrics
+spec:
+  instanceSelector:
+    matchLabels: {app.kubernetes.io/name: perses}
+  config:
+    display: {name: VictoriaMetrics}
+    default: true
+    plugin:
+      kind: PrometheusDatasource
+      spec:
+        proxy:
+          kind: HTTPProxy
+          spec:
+            url: {{ .Values.metrics.url | quote }}
+---
+apiVersion: perses.dev/v1alpha2
+kind: PersesGlobalDatasource
+metadata:
+  name: victoria-logs
+spec:
+  instanceSelector:
+    matchLabels: {app.kubernetes.io/name: perses}
+  config:
+    display: {name: VictoriaLogs}
+    default: true
+    plugin:
+      kind: VictoriaLogsDatasource
+      spec:
+        proxy:
+          kind: HTTPProxy
+          spec:
+            url: {{ .Values.logs.url | quote }}

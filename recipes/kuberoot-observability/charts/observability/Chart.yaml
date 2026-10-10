@@ -1,0 +1,4 @@
+apiVersion: v2
+name: observability
+description: Perses with the cluster's metrics and logs, a dashboard of the devices kuberoot-devices reads, its scrape and the alerts
+version: 0.1.0

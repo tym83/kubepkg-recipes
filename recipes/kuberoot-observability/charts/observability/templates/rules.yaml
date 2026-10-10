@@ -1,0 +1,46 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: kuberoot-devices
+spec:
+  groups:
+    - name: kuberoot-devices
+      rules:
+        # Always firing: routed to an outside dead man's switch, it says the
+        # whole chain works, from scraping to alerting. Its silence is the
+        # alert.
+        - alert: Watchdog
+          expr: vector(1)
+          labels: {severity: none}
+          annotations:
+            summary: The alerting chain of the observability cluster works.
+        - alert: DevicesNotScraped
+          expr: absent(up{job="kuberoot-devices"} == 1)
+          for: 10m
+          labels: {severity: critical}
+          annotations:
+            summary: Nothing is scraped from kuberoot-devices; every device alert is blind.
+        - alert: DeviceDown
+          expr: kuberoot_device_up == 0
+          for: {{ .Values.alerts.deviceDownFor }}
+          labels: {severity: warning}
+          annotations:
+            summary: "{{`{{ $labels.device }}`}} ({{`{{ $labels.protocol }}`}}) does not answer."
+        - alert: DeviceHealthCritical
+          expr: kuberoot_device_value{point=~".*_health"} == 2
+          for: 1m
+          labels: {severity: critical}
+          annotations:
+            summary: "{{`{{ $labels.device }}`}} reports {{`{{ $labels.point }}`}} critical."
+        - alert: DeviceHealthWarning
+          expr: kuberoot_device_value{point=~".*_health"} == 1
+          for: 10m
+          labels: {severity: warning}
+          annotations:
+            summary: "{{`{{ $labels.device }}`}} reports {{`{{ $labels.point }}`}} in warning."
+        - alert: HeartbeatFailing
+          expr: kuberoot_heartbeat_healthy == 0
+          for: {{ .Values.alerts.heartbeatFailingFor }}
+          labels: {severity: critical}
+          annotations:
+            summary: "Heartbeat {{`{{ $labels.heartbeat }}`}} does not go out: the outside will alert too."

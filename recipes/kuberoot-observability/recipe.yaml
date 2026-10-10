@@ -1,0 +1,41 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: kuberoot-observability
+  annotations:
+    kubepkg.dev/description: "The cluster add-ons of the kuberoot observability distribution: edge's, metrics, logs and alerts, Perses dashboards for the devices the cluster watches"
+    kubepkg.dev/home: https://github.com/tym83/kuberoot
+spec:
+  version: 0.1.0
+  build: 1
+  sources:
+    observability:
+      dir: charts/observability
+  charts:
+    observability:
+      from: [observability]
+  package:
+    # The observability distribution watches what is outside it: servers'
+    # BMCs, switches, PDUs, UPSes and services, read by kuberoot-devices on
+    # its control plane. This package stores and shows what it reads: it
+    # requires the metrics and logs stacks and the Perses operator, and adds
+    # a Perses instance with the stores as datasources, a dashboard of the
+    # devices, the scrape of kuberoot-devices and the alerts, Watchdog among
+    # them for an outside dead man's switch.
+    provides: [kuberoot-observability]
+    crds: []
+    images:   # what the charts run, pinned
+      - docker.io/persesdev/perses:v0.54.0@sha256:a0e34ddaf9d7599d96036611af205b948c1179646844202d869f3bcf3d5d9e9c
+    rollback:
+      safe: true   # only resources: a Perses instance, dashboards, scrapes, rules
+    variants:
+      - name: default
+        requires:
+          - {package: kuberoot-edge, version: "~0.2"}
+          - {package: victoria-metrics, version: "~1.153"}
+          - {package: victoria-logs, version: "~1.53"}
+          - {package: perses-operator, version: "~0.5"}
+        components:
+          - name: observability
+            path: observability
+            install: {namespace: monitoring, releaseName: kuberoot-observability}
