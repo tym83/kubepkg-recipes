@@ -30,7 +30,9 @@ spec:
         volume:
           replicas: 1
           dataDirs:
-            - {name: data1, type: persistentVolumeClaim, size: 50Gi, storageClass: "", maxVolumes: 0}
+            # Volumes of 1000 MB (master.volumeSizeLimitMB) fill the 50Gi; with
+            # the default of 7, a new bucket finds no room for its own.
+            - {name: data1, type: persistentVolumeClaim, size: 50Gi, storageClass: "", maxVolumes: 50}
         filer:
           replicas: 1
           data: {type: persistentVolumeClaim, size: 5Gi, storageClass: ""}
