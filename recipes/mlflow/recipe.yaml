@@ -18,6 +18,19 @@ spec:
   charts:
     mlflow:
       from: [upstream]
+      # The chart's schema refuses keys it does not know, and so the values
+      # a platform layers under every package; the overlay drops it.
+      overlay: overlay
+      values:
+        # MLflow 3 answers only the host names it is told, against DNS
+        # rebinding: those of its Service inside the cluster. An ingress adds
+        # its own hosts.
+        serverAllowedHosts:
+          - mlflow
+          - mlflow.mlflow
+          - mlflow.mlflow.svc
+          - mlflow.mlflow.svc.cluster.local
+          - localhost
       # values: {}                   # the package's defaults over the upstream ones
   package:
     provides: [mlflow, experiment-tracking]

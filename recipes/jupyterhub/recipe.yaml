@@ -18,6 +18,9 @@ spec:
   charts:
     jupyterhub:
       from: [upstream]
+      # The chart's schema refuses keys it does not know, and so the values
+      # a platform layers under every package; the overlay drops it.
+      overlay: overlay
       values:
         # The cluster's scheduler places user servers: no second scheduler
         # pinned to an old release, and no image pre-pulling DaemonSets.
