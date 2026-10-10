@@ -1,0 +1,17 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: kuberoot-rt
+  annotations:
+    kubepkg.dev/description: "The cluster add-ons of the kuberoot rt distribution: those of edge"
+    kubepkg.dev/home: https://github.com/tym83/kuberoot
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    # The rt distribution is a real-time controller: its kernel, kubelet
+    # and node tuning are its own; its cluster add-ons are edge's.
+    variants:
+      - name: default
+        requires:
+          - {package: kuberoot-edge, version: "~0.2"}
