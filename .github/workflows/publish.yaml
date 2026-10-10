@@ -70,6 +70,8 @@ jobs:
         run: scripts/build-all.sh
         env:
           KUBEPKG_SIGNING_KEY: ${{ secrets.KUBEPKG_SIGNING_KEY }}
+      - name: Every artifact the index points to can be pulled anonymously
+        run: python3 scripts/check-public.py _site/index.yaml
       - name: Keep the old index address up to date, until BRIDGE_UNTIL
         env:
           BRIDGE_KEY: ${{ secrets.BRIDGE_DEPLOY_KEY }}
