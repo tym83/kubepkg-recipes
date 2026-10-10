@@ -5,6 +5,8 @@ kind: VMServiceScrape
 metadata:
   name: kuberoot-devices
 spec:
+  # The daemon keeps an EndpointSlice, not the deprecated Endpoints.
+  discoveryRole: endpointslices
   namespaceSelector:
     matchNames: [kube-system]
   selector:
