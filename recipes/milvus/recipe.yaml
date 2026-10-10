@@ -1,0 +1,46 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: milvus
+  annotations:
+    kubepkg.dev/description: "Milvus vector database, in standalone mode: one Milvus with its own etcd and object store"
+    kubepkg.dev/home: https://milvus.io
+spec:
+  version: 3.0.1
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://zilliztech.github.io/milvus-helm
+        name: milvus
+        version: "5.0.30"
+        digest: sha256:2e3be7a517d4d9d00be2851a22b7a4c86bdcbac496612cb069c2a31da2832d7f
+  charts:
+    milvus:
+      from: [upstream]
+      values:
+        # One instance, not a cluster of services: enough until it is not,
+        # and far lighter (Pulsar, distributed MinIO and three etcd off).
+        cluster:
+          enabled: false
+        pulsarv3:
+          enabled: false
+        etcd:
+          replicaCount: 1
+        minio:
+          mode: standalone
+  package:
+    provides: [milvus, vector-database]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - docker.io/milvusdb/etcd:3.5.25-r1@sha256:fededb2f2d63c4d8bc64cbbaac6896d59370ed9ceed660c5ce789d67ce0dbf1c
+      - docker.io/milvusdb/milvus:v3.0.1@sha256:82630c952e887e30b0b09f396cb1fbd4320dea25b4f7a3ba12bf1e10524c735c
+      - docker.io/milvusdb/minio:RELEASE.2024-12-18T13-15-44Z@sha256:1dce27c494a16bae114774f1cec295493f3613142713130c2d22dd5696be6ad3
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: milvus
+            path: milvus
+            install: {namespace: milvus}
