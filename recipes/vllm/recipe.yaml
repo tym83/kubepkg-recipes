@@ -1,0 +1,30 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: vllm
+  annotations:
+    kubepkg.dev/description: "vLLM: high-throughput serving of one language model behind an OpenAI-compatible API, on CPUs or NVIDIA GPUs"
+    kubepkg.dev/home: https://github.com/vllm-project/vllm
+spec:
+  version: 0.31.0
+  build: 1
+  sources:
+    chart:
+      dir: charts/vllm
+  charts:
+    vllm:
+      from: [chart]
+  package:
+    provides: [vllm, llm-server]
+    crds: []
+    images:   # both builds: values choose the CPU one or, with gpus, the CUDA one
+      - docker.io/vllm/vllm-openai-cpu:v0.31.0@sha256:495c84fe30f3572b83a78100a1e8ba423dbb77fc532ecefebe114e6b77327bd9
+      - docker.io/vllm/vllm-openai:v0.31.0@sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3
+    rollback:
+      safe: true   # a Deployment and a cache of downloaded weights
+    variants:
+      - name: default
+        components:
+          - name: vllm
+            path: vllm
+            install: {namespace: vllm, releaseName: vllm}

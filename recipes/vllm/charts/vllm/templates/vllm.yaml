@@ -1,0 +1,100 @@
+{{- $name := .Release.Name }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $name }}-cache
+  labels: {app.kubernetes.io/name: vllm, app.kubernetes.io/instance: {{ $name }}}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with .Values.cache.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.cache.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels: {app.kubernetes.io/name: vllm, app.kubernetes.io/instance: {{ $name }}}
+spec:
+  replicas: 1
+  # One volume, one server: the old one goes before the new one starts.
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: vllm, app.kubernetes.io/instance: {{ $name }}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: vllm, app.kubernetes.io/instance: {{ $name }}}
+    spec:
+      securityContext:
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: vllm
+          image: {{ if gt (int .Values.gpus) 0 }}{{ .Values.image.gpu }}{{ else }}{{ .Values.image.cpu }}{{ end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - {{ .Values.model | quote }}
+            - --host=0.0.0.0
+            - --port={{ .Values.port }}
+            - --download-dir=/cache
+            {{- with .Values.servedModelName }}
+            - --served-model-name={{ . }}
+            {{- end }}
+            {{- if gt (int .Values.gpus) 1 }}
+            - --tensor-parallel-size={{ .Values.gpus }}
+            {{- end }}
+            {{- range .Values.extraArgs }}
+            - {{ . | quote }}
+            {{- end }}
+          env:
+            - {name: HF_HOME, value: /cache/huggingface}
+            {{- with .Values.hfTokenSecret }}
+            - name: HF_TOKEN
+              valueFrom: {secretKeyRef: {name: {{ . }}, key: HF_TOKEN}}
+            {{- end }}
+          ports:
+            - {name: http, containerPort: {{ .Values.port }}}
+          # Loading a model takes a while; the server answers /health once
+          # it can serve.
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+            failureThreshold: 180
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          resources:
+            {{- $r := deepCopy .Values.resources }}
+            {{- if gt (int .Values.gpus) 0 }}
+            {{- $_ := set $r "limits" (merge (dict "nvidia.com/gpu" (int .Values.gpus)) ($r.limits | default dict)) }}
+            {{- end }}
+            {{- toYaml $r | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: cache, mountPath: /cache}
+            - {name: shm, mountPath: /dev/shm}
+      volumes:
+        - name: cache
+          persistentVolumeClaim: {claimName: {{ $name }}-cache}
+        - name: shm
+          emptyDir: {medium: Memory, sizeLimit: {{ .Values.shmSize }}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels: {app.kubernetes.io/name: vllm, app.kubernetes.io/instance: {{ $name }}}
+spec:
+  selector: {app.kubernetes.io/name: vllm, app.kubernetes.io/instance: {{ $name }}}
+  ports:
+    - {name: http, port: {{ .Values.port }}, targetPort: http}

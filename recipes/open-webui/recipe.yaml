@@ -1,0 +1,49 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: open-webui
+  annotations:
+    kubepkg.dev/description: "Chat interface for language models behind OpenAI-compatible or Ollama APIs"
+    kubepkg.dev/home: https://openwebui.com
+spec:
+  version: 0.11.4
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://helm.openwebui.com
+        name: open-webui
+        version: "16.6.0"
+        digest: sha256:ca96e875d059a115c55620a75013e72690dc0e703a023ee8c8c7dae6b903d637
+  charts:
+    open-webui:
+      from: [upstream]
+      values:
+        # The server it talks to is given, not bundled: ollama, litellm or any
+        # OpenAI-compatible endpoint, e.g.
+        #   ollamaUrls: [http://ollama.ollama.svc:11434]
+        #   openaiBaseApiUrl: http://litellm.litellm.svc:4000/v1
+        ollama:
+          enabled: false
+        # Pipelines are pinned to a moving tag upstream; off.
+        pipelines:
+          enabled: false
+        # One replica keeps websocket state in memory: no Redis.
+        websocket:
+          manager: ""
+          redis:
+            enabled: false
+        openaiBaseApiUrl: ""
+  package:
+    provides: [open-webui, chat-ui]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - ghcr.io/open-webui/open-webui:0.11.4@sha256:9591b13f13843c7721c2b8eaf7382846c81b3ffe126526d1888d1fed50c6a33f
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: open-webui
+            path: open-webui
+            install: {namespace: open-webui}
