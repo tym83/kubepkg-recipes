@@ -1,0 +1,51 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: kubeflow-trainer
+  annotations:
+    kubepkg.dev/description: "Kubeflow Trainer: distributed training and fine-tuning jobs (PyTorch, DeepSpeed, JAX) as TrainJobs"
+    kubepkg.dev/home: https://www.kubeflow.org/docs/components/trainer/
+spec:
+  version: 2.3.0
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: oci://ghcr.io/kubeflow/charts
+        name: kubeflow-trainer
+        version: "2.3.0"
+        digest: sha256:bc9a6993f3885999ef5008c07108904d4bbee90c7f7b3e9fddec80a4f6eabacd
+  charts:
+    kubeflow-trainer:
+      from: [upstream]
+      values:
+        # The chart takes its image tags from its own version, which a
+        # package build changes (2.3.0-1): the tags of the release, given.
+        image: {tag: v2.3.0}
+        dataCache:
+          cacheImage: {tag: v2.3.0}
+        runtimes:
+          deepspeedDistributed:
+            image: {tag: v2.3.0}
+          mlxDistributed:
+            image: {tag: v2.3.0}
+          xgboostDistributed:
+            image: {tag: v2.3.0}
+  package:
+    provides: [kubeflow-trainer, "api:trainer.kubeflow.org/v1alpha1", "api:jobset.x-k8s.io/v1alpha2"]
+    crds:
+      - clustertrainingruntimes.trainer.kubeflow.org
+      - jobsets.jobset.x-k8s.io
+      - trainingruntimes.trainer.kubeflow.org
+      - trainjobs.trainer.kubeflow.org
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - ghcr.io/kubeflow/trainer/trainer-controller-manager:v2.3.0@sha256:298696e912c26a0ae13dc1c0ef55ec0d4f6d5feeb9cf5e82fdc8500a65b2b5fc
+      - registry.k8s.io/jobset/jobset:v0.12.0@sha256:e75536f1135b7bb2f19f8c3b620782fbdd9091d73398e3a272f9a5fed322980d
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: kubeflow-trainer
+            path: kubeflow-trainer
+            install: {namespace: kubeflow-system, upgradeCRDs: CreateReplace}

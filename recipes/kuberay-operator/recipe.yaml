@@ -1,0 +1,38 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: kuberay-operator
+  annotations:
+    kubepkg.dev/description: "Ray on Kubernetes: Ray clusters, jobs and services for distributed training and serving"
+    kubepkg.dev/home: https://docs.ray.io/en/latest/cluster/kubernetes/
+spec:
+  version: 1.7.1
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://ray-project.github.io/kuberay-helm
+        name: kuberay-operator
+        version: "1.7.1"
+        digest: sha256:fd057c207a6be038f2fe1475abb87f43a8c091b77f1f563b4e8547a2404b5bc8
+  charts:
+    kuberay-operator:
+      from: [upstream]
+      # values: {}                   # the package's defaults over the upstream ones
+  package:
+    provides: [kuberay-operator, ray, "api:ray.io/v1"]
+    crds:
+      - rayclusters.ray.io
+      - raycronjobs.ray.io
+      - rayjobs.ray.io
+      - rayservices.ray.io
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - quay.io/kuberay/operator:v1.7.1@sha256:e69b9cde8f1d55c6111e4ab9005b7a8f9139e3783a38205069a2c4ac94f6745d
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: kuberay-operator
+            path: kuberay-operator
+            install: {namespace: kuberay-system, upgradeCRDs: CreateReplace}

@@ -1,0 +1,48 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: ollama
+  annotations:
+    kubepkg.dev/description: "Local language model server with an OpenAI-compatible API; runs on CPU, or on GPUs given to it"
+    kubepkg.dev/home: https://ollama.com
+spec:
+  version: 0.40.2
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://otwld.github.io/ollama-helm
+        name: ollama
+        version: "1.87.0"
+        digest: sha256:f227476660f82ca646c0a4f10961cfd3f804f57ef0e7ad0d2e33efaf15510d31
+  charts:
+    ollama:
+      from: [upstream]
+      values:
+        # Models live on a volume so a restart does not download them again;
+        # the cluster's default StorageClass provides it.
+        persistentVolume:
+          enabled: true
+          size: 30Gi
+        # Pull models at start, e.g. [qwen2.5:0.5b]; none by default.
+        ollama:
+          models:
+            pull: []
+        # GPUs: ollama.gpu.enabled=true and ollama.gpu.number, with a device
+        # plugin (nvidia-device-plugin or hami) on the cluster.
+        resources:
+          requests: {cpu: 500m, memory: 1Gi}
+  package:
+    provides: [ollama, llm-server]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - docker.io/library/busybox:latest@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
+      - docker.io/ollama/ollama:0.40.2@sha256:b86366bb528bbf7f1424435d165028497a5b69bf6ddb4fa5a87102e2b79f44fb
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: ollama
+            path: ollama
+            install: {namespace: ollama}

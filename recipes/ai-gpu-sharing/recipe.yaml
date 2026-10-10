@@ -1,0 +1,16 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: ai-gpu-sharing
+  annotations:
+    kubepkg.dev/description: "NVIDIA GPUs shared between pods by memory and compute (HAMi), with GPU metrics"
+    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    variants:
+      - name: default
+        requires:
+          - {package: hami, version: "~2.10"}
+          - {package: dcgm-exporter, version: "~4.8"}

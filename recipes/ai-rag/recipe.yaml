@@ -1,0 +1,18 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: ai-rag
+  annotations:
+    kubepkg.dev/description: "Retrieval-augmented generation: model serving and a chat interface with a vector database for documents"
+    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    # Open WebUI does retrieval itself and stores the vectors in Qdrant when
+    # its values say so (VECTOR_DB=qdrant, QDRANT_URI).
+    variants:
+      - name: default
+        requires:
+          - {package: ai-inference, version: "~0.1"}
+          - {package: qdrant, version: "~1.19"}

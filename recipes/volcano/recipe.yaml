@@ -1,0 +1,47 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: volcano
+  annotations:
+    kubepkg.dev/description: "Batch scheduler for training and HPC: gang scheduling, queues and job lifecycle"
+    kubepkg.dev/home: https://volcano.sh
+spec:
+  version: 1.15.3
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://volcano-sh.github.io/helm-charts
+        name: volcano
+        version: "1.15.3"
+        digest: sha256:9a1ffca00ef8e051332dadd8d00e7029454db83ecb158dde7253c14c4c3bba45
+  charts:
+    volcano:
+      from: [upstream]
+      # values: {}                   # the package's defaults over the upstream ones
+  package:
+    provides: [volcano, gang-scheduling, "api:batch.volcano.sh/v1alpha1"]
+    crds:
+      - colocationconfigurations.config.volcano.sh
+      - commands.bus.volcano.sh
+      - cronjobs.batch.volcano.sh
+      - hypernodes.topology.volcano.sh
+      - jobflows.flow.volcano.sh
+      - jobs.batch.volcano.sh
+      - jobtemplates.flow.volcano.sh
+      - nodeshards.shard.volcano.sh
+      - numatopologies.nodeinfo.volcano.sh
+      - podgroups.scheduling.volcano.sh
+      - queues.scheduling.volcano.sh
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - docker.io/volcanosh/vc-controller-manager:v1.15.3@sha256:9063355ee23b5402669e729a04c87dbb2a9b7b9d6343ded3721d4024978da646
+      - docker.io/volcanosh/vc-scheduler:v1.15.3@sha256:7e9875e5897f87ba97f43bbf3c0a0be9c07838c473905d1f919586295cd93a50
+      - docker.io/volcanosh/vc-webhook-manager:v1.15.3@sha256:9231c5626249c178df4d255ce179365cf197b8ff7b0e54051da783787da429af
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: volcano
+            path: volcano
+            install: {namespace: volcano-system}

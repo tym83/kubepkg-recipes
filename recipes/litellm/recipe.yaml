@@ -1,0 +1,43 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: litellm
+  annotations:
+    kubepkg.dev/description: "LLM gateway: one OpenAI-compatible endpoint in front of many model servers, with keys, budgets and routing"
+    kubepkg.dev/home: https://docs.litellm.ai
+spec:
+  version: 1.104.2
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: oci://ghcr.io/berriai
+        name: litellm-helm
+        version: "1.104.2"
+        digest: sha256:138415e1f4d4a8746d0f5152a8afe91f1afe839915307e077349a7668e48c165
+  charts:
+    litellm:
+      from: [upstream]
+      values:
+        # No database of its own by default: models come from proxy_config,
+        # and keys and spend tracking need a PostgreSQL given in db, e.g.
+        # one made with cloudnative-pg (db.useExisting with its secret).
+        db:
+          deployStandalone: false
+          useExisting: false
+        migrationJob:
+          enabled: false
+  package:
+    provides: [litellm, llm-gateway]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - docker.io/library/busybox:latest@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
+      - ghcr.io/berriai/litellm:1.104.2@sha256:3d88bd757134a00e8c00237b85a021ab1f6d54abb9c1df750f411dbe7256a500
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: litellm
+            path: litellm
+            install: {namespace: litellm}

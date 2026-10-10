@@ -23,6 +23,36 @@ Every package is a set of ordinary Helm charts in `ghcr.io/tym83/kubepkg-package
 | kubevirt | 1.9.0 | release manifests, plus a chart for the KubeVirt resource |
 | virtualization | 1.0.0 | meta package: kubevirt ~1.9 and cdi ~1.66 |
 
+## AI packages
+
+For inference and training on Kubernetes. Meta packages put them together for a task; GPU support is a package of its own, for nodes whose operating system carries the NVIDIA driver (the kuberoot ai distribution does), so no driver containers run.
+
+| Package | What it is |
+|---|---|
+| ai-inference | ollama, litellm and open-webui: a model server, a gateway and a chat interface |
+| ai-rag | ai-inference with qdrant for documents |
+| ai-training | kueue, volcano, kuberay-operator, kubeflow-trainer, jupyterhub, mlflow and seaweedfs |
+| ai-gpu | nvidia-device-plugin and dcgm-exporter: whole GPUs for pods, with GPU metrics |
+| ai-gpu-sharing | hami and dcgm-exporter: fractions of a GPU per pod; conflicts with ai-gpu |
+| vllm | one vLLM server, on CPUs or, with `gpus`, on NVIDIA GPUs |
+| milvus, cloudnative-pg | Milvus in standalone mode; PostgreSQL clusters, whose images carry pgvector |
+
+A PostgreSQL with pgvector for retrieval, once cloudnative-pg is installed:
+
+```yaml
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata: {name: vectors}
+spec:
+  instances: 1
+  storage: {size: 10Gi}
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+      postInitApplicationSQL: ["CREATE EXTENSION IF NOT EXISTS vector"]
+```
+
 Build locally with `scripts/build-all.sh`; see the script for publishing.
 
 Licensed under the [Apache License 2.0](LICENSE).

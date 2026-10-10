@@ -1,0 +1,35 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: qdrant
+  annotations:
+    kubepkg.dev/description: "Qdrant vector database for semantic search and retrieval-augmented generation"
+    kubepkg.dev/home: https://qdrant.tech
+spec:
+  version: 1.19.2
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://qdrant.github.io/qdrant-helm
+        name: qdrant
+        version: "1.19.2"
+        digest: sha256:2811cff3992052b131aed7af1d42cb8a760f111c40f56cfbba519425252143f8
+  charts:
+    qdrant:
+      from: [upstream]
+      # values: {}                   # the package's defaults over the upstream ones
+  package:
+    provides: [qdrant, vector-database]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - docker.io/qdrant/qdrant:v1.19.2@sha256:b7b0444c4c351c970b98e90a6f89c2ee4287c65b44e52b4cb503fa5b2aa927ad
+      - registry.suse.com/bci/bci-base:latest@sha256:b39dcf02d6ef54bd2cba185060d41435c75d87fff0f94ce0a2b73f2a24e5e66d
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: qdrant
+            path: qdrant
+            install: {namespace: qdrant}

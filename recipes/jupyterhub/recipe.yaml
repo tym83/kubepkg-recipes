@@ -1,0 +1,59 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: jupyterhub
+  annotations:
+    kubepkg.dev/description: "Multi-user Jupyter notebooks, one server per user, spawned as pods"
+    kubepkg.dev/home: https://z2jh.jupyter.org
+spec:
+  version: 5.5.2
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://hub.jupyter.org/helm-chart
+        name: jupyterhub
+        version: "4.4.2"
+        digest: sha256:0ddfa517050d16f2e1b50c62b5b6377b12574f9a2b88f3b352bd211ef3173c3e
+  charts:
+    jupyterhub:
+      from: [upstream]
+      # The chart's schema refuses keys it does not know, and so the values
+      # a platform layers under every package; the overlay drops it.
+      overlay: overlay
+      values:
+        # The cluster's scheduler places user servers: no second scheduler
+        # pinned to an old release, and no image pre-pulling DaemonSets.
+        scheduling:
+          userScheduler:
+            enabled: false
+          podPriority:
+            enabled: false
+          userPlaceholder:
+            enabled: false
+        prePuller:
+          hook:
+            enabled: false
+          continuous:
+            enabled: false
+        # Reached through the cluster's ingress or a port-forward.
+        proxy:
+          service:
+            type: ClusterIP
+  package:
+    provides: [jupyterhub, notebooks]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - quay.io/jupyterhub/configurable-http-proxy:5.2.0@sha256:522738d5285e4be758da5023194cbc95249efdadaa62a0998c8ed1aa2890b2da
+      - quay.io/jupyterhub/k8s-hub:4.4.2@sha256:108fbb01c3fe23e4a81efc8899aa73b4c15413615c73dfcdc44248eb63096e41
+      # The hub spawns these for each user: no chart renders them.
+      - quay.io/jupyterhub/k8s-network-tools:4.4.2@sha256:5424f72133cfc2cd727a6fb5b100cf9f7151da8bbaea7a5fddddf91aa6a314e4
+      - quay.io/jupyterhub/k8s-singleuser-sample:4.4.2@sha256:65e1b09fc8c902d8ed5b2130412a3eb1682d47237e0383775dc3342276ca965c
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: jupyterhub
+            path: jupyterhub
+            install: {namespace: jupyterhub}

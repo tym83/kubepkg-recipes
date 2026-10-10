@@ -1,0 +1,33 @@
+# The model to serve: a Hugging Face repository, or a path on the cache
+# volume. A small one by default, so the server starts anywhere.
+model: Qwen/Qwen2.5-0.5B-Instruct
+# The name clients ask for; the model's own name when empty.
+servedModelName: ""
+# Further arguments of vllm serve, e.g. [--max-model-len, "8192"].
+extraArgs: []
+
+# gpus: 0 runs the CPU build of vLLM; more runs the CUDA build on that many
+# NVIDIA GPUs (a device plugin must offer nvidia.com/gpu), with tensor
+# parallelism across them.
+gpus: 0
+image:
+  cpu: docker.io/vllm/vllm-openai-cpu:v0.31.0
+  gpu: docker.io/vllm/vllm-openai:v0.31.0
+  pullPolicy: IfNotPresent
+
+# A Secret with the key HF_TOKEN, for gated models.
+hfTokenSecret: ""
+
+# Weights downloaded once, onto a volume of the default StorageClass.
+cache:
+  size: 30Gi
+  storageClass: ""
+
+port: 8000
+resources:
+  requests: {cpu: "2", memory: 4Gi}
+  limits: {memory: 8Gi}
+# Shared memory for the workers; vLLM needs more than the default 64Mi.
+shmSize: 2Gi
+nodeSelector: {}
+tolerations: []

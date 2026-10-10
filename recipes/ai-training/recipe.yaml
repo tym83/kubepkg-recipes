@@ -1,0 +1,24 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: ai-training
+  annotations:
+    kubepkg.dev/description: "Training and fine-tuning: job queues, gang scheduling, Ray, Kubeflow Trainer, notebooks, experiment tracking and S3 storage"
+    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    variants:
+      - name: default
+        requires:
+          # Kueue decides when a job runs, Volcano schedules its pods all at
+          # once: a distributed job never starts half its workers.
+          - {package: kueue, version: "~0.20"}
+          - {package: volcano, version: "~1.15"}
+          - {package: kuberay-operator, version: "~1.7"}
+          - {package: kubeflow-trainer, version: "~2.3"}
+          - {package: jupyterhub, version: "~5.5"}
+          - {package: mlflow, version: "~3.16"}
+          # Datasets, checkpoints and the MLflow artifact store.
+          - {package: seaweedfs, version: "~4.48"}

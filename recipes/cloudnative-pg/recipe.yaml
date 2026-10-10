@@ -1,0 +1,45 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: cloudnative-pg
+  annotations:
+    kubepkg.dev/description: "PostgreSQL operator: clusters with replication, backups and failover; its images carry pgvector"
+    kubepkg.dev/home: https://cloudnative-pg.io
+spec:
+  version: 1.30.1
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://cloudnative-pg.github.io/charts
+        name: cloudnative-pg
+        version: "0.29.1"
+        digest: sha256:b53d3991fe84bcf38767e7702cae78666265427a127a26fff168ab4207d2b1df
+  charts:
+    cloudnative-pg:
+      from: [upstream]
+      # values: {}                   # the package's defaults over the upstream ones
+  package:
+    provides: [cloudnative-pg, postgresql-operator, "api:postgresql.cnpg.io/v1"]
+    crds:
+      - backups.postgresql.cnpg.io
+      - clusterimagecatalogs.postgresql.cnpg.io
+      - clusters.postgresql.cnpg.io
+      - databaseroles.postgresql.cnpg.io
+      - databases.postgresql.cnpg.io
+      - failoverquorums.postgresql.cnpg.io
+      - imagecatalogs.postgresql.cnpg.io
+      - poolers.postgresql.cnpg.io
+      - publications.postgresql.cnpg.io
+      - scheduledbackups.postgresql.cnpg.io
+      - subscriptions.postgresql.cnpg.io
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - ghcr.io/cloudnative-pg/cloudnative-pg:1.30.1@sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: cloudnative-pg
+            path: cloudnative-pg
+            install: {namespace: cnpg-system, upgradeCRDs: CreateReplace}

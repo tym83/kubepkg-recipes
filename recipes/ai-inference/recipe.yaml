@@ -1,0 +1,21 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: ai-inference
+  annotations:
+    kubepkg.dev/description: "Serving language models: a model server, a gateway with one OpenAI-compatible API in front of it, and a chat interface"
+    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    # Ollama serves on CPUs as well as GPUs, so the set runs on any cluster;
+    # vllm is the package for high-throughput serving on GPUs. Open WebUI and
+    # LiteLLM are told where the model server is in their values
+    # (ollamaUrls, proxy_config). GPUs come from ai-gpu or ai-gpu-sharing.
+    variants:
+      - name: default
+        requires:
+          - {package: ollama, version: "~0.40"}
+          - {package: litellm, version: "~1.104"}
+          - {package: open-webui, version: "~0.11"}

@@ -1,0 +1,18 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: kuberoot-ai
+  annotations:
+    kubepkg.dev/description: "The cluster add-ons of the kuberoot ai distribution: those of edge, which AI packages add to"
+    kubepkg.dev/home: https://github.com/tym83/kuberoot
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    # The ai distribution is edge with models and an operator agent of its
+    # own; its cluster add-ons are edge's. GPU support, serving, training
+    # and data come from the ai-* packages, installed as each cluster needs.
+    variants:
+      - name: default
+        requires:
+          - {package: kuberoot-edge, version: "~0.2"}

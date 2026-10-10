@@ -1,0 +1,18 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: ai-gpu
+  annotations:
+    kubepkg.dev/description: "Whole NVIDIA GPUs for pods, with GPU metrics, on nodes that carry the driver"
+    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+spec:
+  version: 0.1.0
+  build: 1
+  package:
+    # Each pod gets whole GPUs. For fractions of a GPU, ai-gpu-sharing
+    # instead: the two cannot run together.
+    variants:
+      - name: default
+        requires:
+          - {package: nvidia-device-plugin, version: "~0.20"}
+          - {package: dcgm-exporter, version: "~4.8"}

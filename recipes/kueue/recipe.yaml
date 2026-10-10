@@ -1,0 +1,45 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: kueue
+  annotations:
+    kubepkg.dev/description: "Job queueing: quotas, fair sharing and admission of batch and training jobs into the cluster"
+    kubepkg.dev/home: https://kueue.sigs.k8s.io
+spec:
+  version: 0.20.1
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: oci://registry.k8s.io/kueue/charts
+        name: kueue
+        version: "0.20.1"
+        digest: sha256:9e61853138ac73d409baa6b42a9be45c9f1aecb7f46fced3aafd7f21fd4b72cc
+  charts:
+    kueue:
+      from: [upstream]
+      # values: {}                   # the package's defaults over the upstream ones
+  package:
+    provides: [kueue, job-queueing, "api:kueue.x-k8s.io/v1beta2"]
+    crds:
+      - admissionchecks.kueue.x-k8s.io
+      - clusterqueues.kueue.x-k8s.io
+      - cohorts.kueue.x-k8s.io
+      - localqueues.kueue.x-k8s.io
+      - multikueueclusters.kueue.x-k8s.io
+      - multikueueconfigs.kueue.x-k8s.io
+      - provisioningrequestconfigs.kueue.x-k8s.io
+      - resourceflavors.kueue.x-k8s.io
+      - topologies.kueue.x-k8s.io
+      - workloadpriorityclasses.kueue.x-k8s.io
+      - workloads.kueue.x-k8s.io
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - registry.k8s.io/kueue/kueue:v0.20.1@sha256:874ed2a77e2313817ae36570ad831353ae03ab66c1ed96d9392ab84b7be3bde3
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: kueue
+            path: kueue
+            install: {namespace: kueue-system}

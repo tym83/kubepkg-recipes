@@ -1,0 +1,43 @@
+apiVersion: kubepkg.dev/v1
+kind: Recipe
+metadata:
+  name: dcgm-exporter
+  annotations:
+    kubepkg.dev/description: "GPU metrics (utilisation, memory, temperature, power, errors) from NVIDIA DCGM, for Prometheus-compatible monitoring"
+    kubepkg.dev/home: https://github.com/NVIDIA/dcgm-exporter
+spec:
+  version: 4.8.4
+  build: 1
+  sources:
+    upstream:
+      chart:
+        repository: https://nvidia.github.io/dcgm-exporter/helm-charts
+        name: dcgm-exporter
+        version: "4.8.4"
+        digest: sha256:047b75f5775c66346f96373504e08c81e2f3e2768b4ef64c5314768307ad643c
+  charts:
+    dcgm-exporter:
+      from: [upstream]
+      values:
+        # On GPU nodes only, labelled as for the device plugin.
+        nodeSelector:
+          nvidia.com/gpu.present: "true"
+        # Every GPU of the node, through CDI: the exporter asks for none of
+        # them as a resource.
+        podAnnotations:
+          cdi.k8s.io/dcgm-exporter: nvidia.com/gpu=all
+        serviceMonitor:
+          enabled: false
+  package:
+    provides: [dcgm-exporter, gpu-metrics]
+    crds: []
+    images:   # what the charts run, pinned; add images an operator deploys on its own
+      - nvcr.io/nvidia/k8s/dcgm-exporter:4.6.1-4.8.4-distroless@sha256:148b0c025e5f2850256816fa33754fbf4733b7a086697a95613fc0ba3db5b003
+    rollback:
+      safe: false   # true once rolling back to the previous version is known not to lose data
+    variants:
+      - name: default
+        components:
+          - name: dcgm-exporter
+            path: dcgm-exporter
+            install: {namespace: dcgm-exporter, privileged: true}
