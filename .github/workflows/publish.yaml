@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Weekly, so the old index address is retired on time without a push.
+  schedule:
+    - cron: "17 3 * * 1"
 
 permissions:
   contents: read
@@ -16,9 +19,19 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  KUBEPKG_REF: v1.1.0
+  KUBEPKG_REF: v1.2.0
   REGISTRY: oci://ghcr.io/${{ github.repository_owner }}/kubepkg-packages
-  BASE_INDEX: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/index.yaml
+  BASE_INDEX: https://${{ github.repository_owner }}.github.io/kubepkg-recipes/index.yaml
+  # The repository moved from tym83 on 2026-10-10. Until the new Pages site
+  # has an index, the published one is read from the old address, and the
+  # charts published under ghcr.io/tym83 are copied, digests unchanged, and
+  # relocated in the index. Remove with the bridge below.
+  OLD_INDEX: https://tym83.github.io/kubepkg-recipes/index.yaml
+  OLD_REGISTRY: oci://ghcr.io/tym83/kubepkg-packages
+  # The old index address, tym83.github.io/kubepkg-recipes, is served by
+  # the tym83/tym83.github.io repository: a copy of this index, kept up to
+  # date until this day, and removed on it.
+  BRIDGE_UNTIL: "2027-01-10"
 
 jobs:
   publish:
@@ -32,15 +45,54 @@ jobs:
         with:
           go-version: stable
       - name: Install kubepkg
-        run: go install "github.com/tym83/kubepkg/cmd/kubepkg@${KUBEPKG_REF}"
+        run: go install "github.com/kuberoot-dev/kubepkg/cmd/kubepkg@${KUBEPKG_REF}"
       - name: Install cosign, to check upstream image signatures
         uses: sigstore/cosign-installer@v3
       - name: Log in to the registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - uses: oras-project/setup-oras@v1
+      - name: Published index, and artifacts still under the old registry
+        run: |
+          base="${BASE_INDEX}"
+          if ! curl -fsSo base-index.yaml "${base}"; then
+            base="${OLD_INDEX}"
+            curl -fsSo base-index.yaml "${base}"
+            echo "BASE_INDEX=${base}" >> "${GITHUB_ENV}"
+          fi
+          python3 scripts/relocation-refs.py base-index.yaml "${OLD_REGISTRY}" "${REGISTRY}" > moves.txt
+          # Copied unchanged, digests included; what is there already stays.
+          while read -r from to; do
+            oras manifest fetch --descriptor "${to}" >/dev/null 2>&1 || oras cp "${from}" "${to}"
+          done < moves.txt
+          [[ -s moves.txt ]] && echo "RELOCATE=${OLD_REGISTRY}=${REGISTRY}" >> "${GITHUB_ENV}"
+          echo "base index: ${base}; $(wc -l < moves.txt) artifacts relocated from ${OLD_REGISTRY}"
       - name: Build, publish, index and sign
         run: scripts/build-all.sh
         env:
           KUBEPKG_SIGNING_KEY: ${{ secrets.KUBEPKG_SIGNING_KEY }}
+      - name: Every artifact the index points to can be pulled anonymously
+        run: python3 scripts/check-public.py _site/index.yaml
+      - name: Keep the old index address up to date, until BRIDGE_UNTIL
+        env:
+          BRIDGE_KEY: ${{ secrets.BRIDGE_DEPLOY_KEY }}
+        run: |
+          [[ -n "${BRIDGE_KEY}" ]] || { echo "no BRIDGE_DEPLOY_KEY; skipped"; exit 0; }
+          mkdir -p ~/.ssh && echo "${BRIDGE_KEY}" > ~/.ssh/bridge && chmod 600 ~/.ssh/bridge
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/bridge -o StrictHostKeyChecking=accept-new"
+          git clone -q git@github.com:tym83/tym83.github.io.git bridge
+          cd bridge
+          if [[ "$(date -u +%F)" < "${BRIDGE_UNTIL}" ]]; then
+            cp ../_site/index.yaml ../_site/index.yaml.sig kubepkg-recipes/
+            msg="chore: update the package index copy"
+          else
+            git rm -q --ignore-unmatch kubepkg-recipes/index.yaml kubepkg-recipes/index.yaml.sig
+            msg="chore: retire the old package index address"
+          fi
+          git add -A
+          git diff --cached --quiet && exit 0
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "${msg}" -m "From ${GITHUB_REPOSITORY}@${GITHUB_SHA}."
+          git push -q
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

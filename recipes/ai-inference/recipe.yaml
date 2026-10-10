@@ -4,7 +4,7 @@ metadata:
   name: ai-inference
   annotations:
     kubepkg.dev/description: "Serving language models: a model server, a gateway with one OpenAI-compatible API in front of it, and a chat interface"
-    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+    kubepkg.dev/home: https://github.com/kuberoot-dev/kubepkg-recipes
 spec:
   version: 0.1.0
   build: 1

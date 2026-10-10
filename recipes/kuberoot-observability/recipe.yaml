@@ -4,7 +4,7 @@ metadata:
   name: kuberoot-observability
   annotations:
     kubepkg.dev/description: "The cluster add-ons of the kuberoot observability distribution: edge's, metrics, logs and alerts, Perses dashboards for the devices the cluster watches"
-    kubepkg.dev/home: https://github.com/tym83/kuberoot
+    kubepkg.dev/home: https://github.com/kuberoot-dev/kuberoot
 spec:
   version: 0.1.0
   build: 2

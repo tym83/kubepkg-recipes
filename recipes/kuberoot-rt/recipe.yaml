@@ -4,7 +4,7 @@ metadata:
   name: kuberoot-rt
   annotations:
     kubepkg.dev/description: "The cluster add-ons of the kuberoot rt distribution: those of edge"
-    kubepkg.dev/home: https://github.com/tym83/kuberoot
+    kubepkg.dev/home: https://github.com/kuberoot-dev/kuberoot
 spec:
   version: 0.1.0
   build: 1

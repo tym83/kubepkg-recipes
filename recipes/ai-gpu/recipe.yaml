@@ -4,7 +4,7 @@ metadata:
   name: ai-gpu
   annotations:
     kubepkg.dev/description: "Whole NVIDIA GPUs for pods, with GPU metrics, on nodes that carry the driver"
-    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+    kubepkg.dev/home: https://github.com/kuberoot-dev/kubepkg-recipes
 spec:
   version: 0.1.0
   build: 1

@@ -4,7 +4,7 @@ metadata:
   name: kuberoot-platform-full
   annotations:
     kubepkg.dev/description: "kuberoot-platform with policies (Kyverno), backups (Velero) and replicated storage (Piraeus)"
-    kubepkg.dev/home: https://github.com/tym83/kubepkg-recipes
+    kubepkg.dev/home: https://github.com/kuberoot-dev/kubepkg-recipes
 spec:
   version: 0.2.0
   build: 1
